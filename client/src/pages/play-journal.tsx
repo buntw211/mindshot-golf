@@ -68,6 +68,13 @@ const guidedQuestions = [
     ],
   },
   {
+    section: "Thought Process",
+    fields: ["thoughtProcess"],
+    questions: [
+      { field: "thoughtProcess", label: "Thought Process", question: "What were you thinking about during key shots? Were your thoughts helpful or distracting? What self-talk patterns did you notice?" },
+    ],
+  },
+  {
     section: "Lessons & Growth",
     fields: ["lessonsLearned", "gratitude", "nextSessionGoals"],
     questions: [
@@ -143,6 +150,7 @@ export default function PlayJournal() {
       emotionalHighs: "",
       emotionalLows: "",
       focusQuality: "",
+      thoughtProcess: "",
       lessonsLearned: "",
       gratitude: "",
       nextSessionGoals: "",

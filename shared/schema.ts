@@ -36,6 +36,7 @@ export const sessions = pgTable("sessions", {
   emotionalHighs: text("emotional_highs"),
   emotionalLows: text("emotional_lows"),
   focusQuality: text("focus_quality"),
+  thoughtProcess: text("thought_process"),
   lessonsLearned: text("lessons_learned"),
   gratitude: text("gratitude"),
   nextSessionGoals: text("next_session_goals"),

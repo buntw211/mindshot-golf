@@ -60,6 +60,7 @@ export class DatabaseStorage implements IStorage {
       session.emotionalHighs,
       session.emotionalLows,
       session.focusQuality,
+      session.thoughtProcess,
       session.lessonsLearned,
       session.gratitude,
       session.nextSessionGoals

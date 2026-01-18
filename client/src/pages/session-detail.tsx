@@ -252,6 +252,12 @@ export default function SessionDetail() {
             title="Focus & Presence"
             content={session.focusQuality}
           />
+          {isPlay && (
+            <JournalSection
+              title="Thought Process"
+              content={session.thoughtProcess}
+            />
+          )}
           <JournalSection
             title={isPlay ? "Lessons Learned" : "What Worked"}
             content={session.lessonsLearned}
