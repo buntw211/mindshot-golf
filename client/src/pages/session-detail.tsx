@@ -222,6 +222,12 @@ export default function SessionDetail() {
             title={isPlay ? "Pre-Round Mindset" : "Session Goals"}
             content={session.preRoundMindset}
           />
+          {isPlay && (
+            <JournalSection
+              title="Pre-Round Routine"
+              content={session.preRoundRoutine}
+            />
+          )}
           <JournalSection
             title="Key Moments"
             content={session.keyMoments}

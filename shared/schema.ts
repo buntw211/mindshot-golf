@@ -30,6 +30,7 @@ export const sessions = pgTable("sessions", {
   overallMood: integer("overall_mood"),
   overallFocus: integer("overall_focus"),
   preRoundMindset: text("pre_round_mindset"),
+  preRoundRoutine: text("pre_round_routine"),
   keyMoments: text("key_moments"),
   decisionsReflection: text("decisions_reflection"),
   emotionalHighs: text("emotional_highs"),

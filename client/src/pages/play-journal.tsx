@@ -38,9 +38,10 @@ type PlayFormData = z.infer<typeof playFormSchema>;
 const guidedQuestions = [
   {
     section: "Before the Round",
-    fields: ["preRoundMindset"],
+    fields: ["preRoundMindset", "preRoundRoutine"],
     questions: [
       { field: "preRoundMindset", label: "Pre-Round Mindset", question: "What was your mental state before teeing off? What expectations did you have?" },
+      { field: "preRoundRoutine", label: "Pre-Round Routine", question: "How well did you stick to your pre-round routine? Did it create the comfort and readiness you needed?" },
     ],
   },
   {
@@ -136,6 +137,7 @@ export default function PlayJournal() {
       overallMood: 5,
       overallFocus: 5,
       preRoundMindset: "",
+      preRoundRoutine: "",
       keyMoments: "",
       decisionsReflection: "",
       emotionalHighs: "",

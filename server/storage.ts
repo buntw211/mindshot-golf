@@ -54,6 +54,7 @@ export class DatabaseStorage implements IStorage {
 
     const textFields = [
       session.preRoundMindset,
+      session.preRoundRoutine,
       session.keyMoments,
       session.decisionsReflection,
       session.emotionalHighs,
