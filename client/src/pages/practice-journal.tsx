@@ -1,0 +1,427 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles } from "lucide-react";
+import { insertSessionSchema, thoughtCategories, type ThoughtCategory } from "@shared/schema";
+
+const practiceFormSchema = insertSessionSchema.extend({
+  type: z.literal("practice"),
+  practiceType: z.string().min(1, "Please select a practice type"),
+  date: z.string().min(1, "Please select a date"),
+  duration: z.coerce.number().min(1, "Please enter duration").max(480),
+  overallMood: z.number().min(1).max(10),
+  overallFocus: z.number().min(1).max(10),
+});
+
+type PracticeFormData = z.infer<typeof practiceFormSchema>;
+
+const practiceTypes = [
+  "Driving Range",
+  "Short Game",
+  "Putting",
+  "Bunker Practice",
+  "Course Practice",
+  "Simulator",
+  "Mental Rehearsal",
+  "Physical Training",
+];
+
+const guidedQuestions = [
+  {
+    section: "Practice Intent",
+    fields: ["preRoundMindset"],
+    questions: [
+      { field: "preRoundMindset", label: "Session Goals", question: "What specific skills or mental aspects did you want to work on today?" },
+    ],
+  },
+  {
+    section: "The Work",
+    fields: ["keyMoments", "decisionsReflection"],
+    questions: [
+      { field: "keyMoments", label: "Key Moments", question: "What breakthrough moments or challenges did you experience?" },
+      { field: "decisionsReflection", label: "Quality of Practice", question: "How intentional was your practice? Did you practice with purpose or just hit balls?" },
+    ],
+  },
+  {
+    section: "Mental State",
+    fields: ["focusQuality"],
+    questions: [
+      { field: "focusQuality", label: "Focus & Presence", question: "How present were you during practice? What helped or hindered your focus?" },
+    ],
+  },
+  {
+    section: "Takeaways",
+    fields: ["lessonsLearned", "nextSessionGoals"],
+    questions: [
+      { field: "lessonsLearned", label: "What Worked", question: "What insights or improvements can you take to the course?" },
+      { field: "nextSessionGoals", label: "Next Practice Goals", question: "What will you focus on in your next practice session?" },
+    ],
+  },
+];
+
+const practiceReframingTips: Record<ThoughtCategory, { negative: string; reframe: string }[]> = {
+  "confidence": [
+    { negative: "I'll never get better at this", reframe: "Every repetition builds skill. Trust the process of improvement." },
+    { negative: "I'm wasting my time", reframe: "Deliberate practice is the path to mastery. I'm investing in my future game." },
+  ],
+  "focus": [
+    { negative: "I'm just going through the motions", reframe: "Stop. Set a clear intention for the next 10 shots. Quality over quantity." },
+    { negative: "My mind keeps wandering", reframe: "Bring attention back to one specific feel or target. Narrow the focus." },
+  ],
+  "frustration": [
+    { negative: "Why isn't this working", reframe: "Struggle is part of learning. What small adjustment can I try?" },
+    { negative: "I keep making the same mistake", reframe: "Awareness is the first step. Now I can experiment with solutions." },
+  ],
+  "anxiety": [
+    { negative: "I'm anxious about my game", reframe: "Practice is the safe space to experiment. No score, no pressure." },
+    { negative: "What if I'm practicing wrong", reframe: "There's no perfect way. Stay curious and keep learning." },
+  ],
+  "patience": [
+    { negative: "I want results now", reframe: "Skill develops over time. Today's work will show up in future rounds." },
+    { negative: "This is taking too long", reframe: "Embrace the journey. Enjoy the process of becoming better." },
+  ],
+  "decision-making": [
+    { negative: "I don't know what to practice", reframe: "Start with what challenged me in my last round. Work backwards." },
+    { negative: "Should I change my technique", reframe: "Make one small change at a time. Test it thoroughly before moving on." },
+  ],
+  "self-talk": [
+    { negative: "I'm so bad at this", reframe: "I'm learning. Every expert was once a beginner." },
+    { negative: "Other people improve faster", reframe: "I'm on my own path. Focus on my own progress." },
+  ],
+  "pressure": [
+    { negative: "I need to perfect this before my round", reframe: "Practice builds foundation. Trust that work will show up when needed." },
+    { negative: "I have to fix everything", reframe: "Focus on one thing at a time. Small improvements compound." },
+  ],
+  "expectations": [
+    { negative: "I should be better by now", reframe: "Skill development isn't linear. Keep showing up." },
+    { negative: "This practice isn't productive", reframe: "Any time spent with a club in hand builds feel and connection." },
+  ],
+  "acceptance": [
+    { negative: "Today's practice was a waste", reframe: "Even challenging sessions teach us something. What did I learn?" },
+    { negative: "I can't accept where my game is", reframe: "Acceptance allows me to work from where I am, not where I wish I was." },
+  ],
+};
+
+export default function PracticeJournal() {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [step, setStep] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
+
+  const form = useForm<PracticeFormData>({
+    resolver: zodResolver(practiceFormSchema),
+    defaultValues: {
+      type: "practice",
+      date: new Date().toISOString().split("T")[0],
+      practiceType: "",
+      duration: 60,
+      overallMood: 5,
+      overallFocus: 5,
+      preRoundMindset: "",
+      keyMoments: "",
+      decisionsReflection: "",
+      focusQuality: "",
+      lessonsLearned: "",
+      nextSessionGoals: "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (data: PracticeFormData) => {
+      const res = await apiRequest("POST", "/api/sessions", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      toast({
+        title: "Practice Session Saved",
+        description: "Your mental game journal entry has been saved.",
+      });
+      navigate("/history");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save your entry. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: PracticeFormData) => {
+    mutation.mutate(data);
+  };
+
+  const totalSteps = guidedQuestions.length + 1;
+
+  return (
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+          <Target className="w-6 h-6 text-secondary-foreground" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold" data-testid="text-practice-title">Practice Session Journal</h1>
+          <p className="text-muted-foreground">Reflect on your practice</p>
+        </div>
+      </div>
+
+      <div className="flex gap-1 mb-6">
+        {Array.from({ length: totalSteps }).map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              i <= step ? "bg-primary" : "bg-muted"
+            }`}
+          />
+        ))}
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {step === 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Practice Details</CardTitle>
+                <CardDescription>Basic information about your session</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="practiceType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Practice Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-practice-type">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {practiceTypes.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} data-testid="input-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duration (minutes)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="60"
+                          {...field}
+                          data-testid="input-duration"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="overallMood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overall Mood: {field.value}/10</FormLabel>
+                        <FormControl>
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={([v]) => field.onChange(v)}
+                            data-testid="slider-mood"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="overallFocus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overall Focus: {field.value}/10</FormLabel>
+                        <FormControl>
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={([v]) => field.onChange(v)}
+                            data-testid="slider-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {step > 0 && step <= guidedQuestions.length && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{guidedQuestions[step - 1].section}</CardTitle>
+                <CardDescription>Take your time to reflect honestly</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {guidedQuestions[step - 1].questions.map((q) => (
+                  <FormField
+                    key={q.field}
+                    control={form.control}
+                    name={q.field as keyof PracticeFormData}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{q.label}</FormLabel>
+                        <p className="text-sm text-muted-foreground mb-2">{q.question}</p>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Write your thoughts..."
+                            className="min-h-[120px] resize-none"
+                            {...field}
+                            value={field.value as string || ""}
+                            data-testid={`textarea-${q.field}`}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="bg-accent/30 border-accent">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Practice Reframing Tips</CardTitle>
+              </div>
+              <CardDescription>
+                Select a thought category to see helpful reframes for practice
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {thoughtCategories.map((cat) => (
+                  <Badge
+                    key={cat}
+                    variant={selectedCategory === cat ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                    data-testid={`badge-category-${cat}`}
+                  >
+                    {cat.replace("-", " ")}
+                  </Badge>
+                ))}
+              </div>
+              {selectedCategory && practiceReframingTips[selectedCategory] && (
+                <div className="space-y-3">
+                  {practiceReframingTips[selectedCategory].map((tip, i) => (
+                    <div key={i} className="p-3 bg-card rounded-md border">
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="text-destructive font-medium text-sm">Negative:</span>
+                        <span className="text-sm italic">"{tip.negative}"</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span className="text-sm font-medium text-primary">"{tip.reframe}"</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-between pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(Math.max(0, step - 1))}
+              disabled={step === 0}
+              data-testid="button-prev"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            {step < totalSteps - 1 ? (
+              <Button
+                type="button"
+                onClick={() => setStep(step + 1)}
+                data-testid="button-next"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={mutation.isPending} data-testid="button-save">
+                <Save className="w-4 h-4 mr-2" />
+                {mutation.isPending ? "Saving..." : "Save Entry"}
+              </Button>
+            )}
+          </div>
+        </form>
+      </Form>
+    </div>
+  );
+}
