@@ -14,6 +14,10 @@ import {
   Target,
   Lightbulb,
   ArrowRight,
+  HelpCircle,
+  BookOpen,
+  BarChart3,
+  Sliders,
 } from "lucide-react";
 import type { PatternSummary, ThoughtCategory } from "@shared/schema";
 
@@ -165,6 +169,59 @@ export default function Patterns() {
           </Button>
         </Link>
       </div>
+
+      <Card className="bg-accent/30 border-accent" data-testid="card-how-it-works">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base">How Thought Patterns Work</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-1">Journal Analysis</h4>
+                <p className="text-xs text-muted-foreground">
+                  We analyze the words and phrases in your journal entries to detect patterns in how you think about your game.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <BarChart3 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-1">Pattern Detection</h4>
+                <p className="text-xs text-muted-foreground">
+                  Your writing reveals mental tendencies you may not notice. We track positive, neutral, and negative thoughts across 10 categories.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Sliders className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-1">Self-Assessment Comparison</h4>
+                <p className="text-xs text-muted-foreground">
+                  Compare the self-ratings you give in journals against what your writing reveals. Gaps between them highlight blind spots.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-3 bg-card rounded-md border">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Why this matters:</span> Often we feel differently about our mental game than what actually shows up in our thoughts. 
+              For example, you might rate your patience as "8/10" but your journal entries reveal frequent frustration. 
+              This comparison helps build self-awareness and guides where to focus your mental game work.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {!hasPatterns ? (
         <Card className="p-12">
