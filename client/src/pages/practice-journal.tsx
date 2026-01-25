@@ -61,18 +61,19 @@ const guidedQuestions = [
     ],
   },
   {
+    section: "Swing Work",
+    fields: ["swingFocus"],
+    questions: [
+      { field: "swingFocus", label: "What You Worked On", question: "What swing changes or techniques were you focusing on? What adjustments did you make?" },
+    ],
+    hasConfidenceTracking: true,
+  },
+  {
     section: "The Work",
     fields: ["keyMoments", "decisionsReflection"],
     questions: [
       { field: "keyMoments", label: "Key Moments", question: "What breakthrough moments or challenges did you experience?" },
-      { field: "decisionsReflection", label: "Quality of Practice", question: "How intentional was your practice? Did you practice with purpose or just hit balls?" },
-    ],
-  },
-  {
-    section: "Mental State",
-    fields: ["focusQuality"],
-    questions: [
-      { field: "focusQuality", label: "Focus & Presence", question: "How present were you during practice? What helped or hindered your focus?" },
+      { field: "decisionsReflection", label: "Quality & Presence", question: "How intentional and focused was your practice? Were you fully present or going through the motions?" },
     ],
   },
   {
@@ -146,7 +147,9 @@ export default function PracticeJournal() {
       preRoundMindset: "",
       keyMoments: "",
       decisionsReflection: "",
-      focusQuality: "",
+      swingFocus: "",
+      confidenceBefore: 5,
+      confidenceAfter: 5,
       lessonsLearned: "",
       nextSessionGoals: "",
     },
@@ -346,6 +349,56 @@ export default function PracticeJournal() {
                     )}
                   />
                 ))}
+                
+                {(guidedQuestions[step - 1] as { hasConfidenceTracking?: boolean }).hasConfidenceTracking && (
+                  <div className="space-y-6 pt-4 border-t">
+                    <h4 className="font-medium text-sm text-muted-foreground">How confident do you feel about these changes?</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="confidenceBefore"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Before Practice: {field.value}/10</FormLabel>
+                            <p className="text-xs text-muted-foreground mb-2">How confident were you in the change when you started?</p>
+                            <FormControl>
+                              <Slider
+                                min={1}
+                                max={10}
+                                step={1}
+                                value={[field.value || 5]}
+                                onValueChange={([v]) => field.onChange(v)}
+                                data-testid="slider-confidence-before"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="confidenceAfter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>After Practice: {field.value}/10</FormLabel>
+                            <p className="text-xs text-muted-foreground mb-2">How confident are you now after working on it?</p>
+                            <FormControl>
+                              <Slider
+                                min={1}
+                                max={10}
+                                step={1}
+                                value={[field.value || 5]}
+                                onValueChange={([v]) => field.onChange(v)}
+                                data-testid="slider-confidence-after"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

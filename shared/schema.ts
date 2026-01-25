@@ -40,6 +40,9 @@ export const sessions = pgTable("sessions", {
   lessonsLearned: text("lessons_learned"),
   gratitude: text("gratitude"),
   nextSessionGoals: text("next_session_goals"),
+  swingFocus: text("swing_focus"),
+  confidenceBefore: integer("confidence_before"),
+  confidenceAfter: integer("confidence_after"),
   createdAt: varchar("created_at", { length: 30 }).notNull()
 });
 

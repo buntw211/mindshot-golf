@@ -228,12 +228,53 @@ export default function SessionDetail() {
               content={session.preRoundRoutine}
             />
           )}
+          {!isPlay && session.swingFocus && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                Swing Work
+              </h3>
+              <p className="text-foreground whitespace-pre-wrap">{session.swingFocus}</p>
+              {(session.confidenceBefore || session.confidenceAfter) && (
+                <div className="flex gap-6 pt-2">
+                  {session.confidenceBefore && (
+                    <div className="flex items-center gap-2 bg-accent/50 rounded-md px-3 py-2">
+                      <div className="text-sm text-muted-foreground">Before:</div>
+                      <div className="font-semibold">{session.confidenceBefore}/10</div>
+                    </div>
+                  )}
+                  {session.confidenceAfter && (
+                    <div className="flex items-center gap-2 bg-accent/50 rounded-md px-3 py-2">
+                      <div className="text-sm text-muted-foreground">After:</div>
+                      <div className="font-semibold">{session.confidenceAfter}/10</div>
+                    </div>
+                  )}
+                  {session.confidenceBefore && session.confidenceAfter && (
+                    <div className={`flex items-center gap-2 rounded-md px-3 py-2 ${
+                      session.confidenceAfter > session.confidenceBefore 
+                        ? "bg-primary/10 text-primary" 
+                        : session.confidenceAfter < session.confidenceBefore
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-accent/50"
+                    }`}>
+                      <div className="text-sm">
+                        {session.confidenceAfter > session.confidenceBefore 
+                          ? `+${session.confidenceAfter - session.confidenceBefore} improvement`
+                          : session.confidenceAfter < session.confidenceBefore
+                          ? `${session.confidenceAfter - session.confidenceBefore} drop`
+                          : "No change"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <JournalSection
             title="Key Moments"
             content={session.keyMoments}
           />
           <JournalSection
-            title={isPlay ? "Decision Making" : "Quality of Practice"}
+            title={isPlay ? "Decision Making" : "Quality & Presence"}
             content={session.decisionsReflection}
           />
           {isPlay && (
@@ -246,17 +287,15 @@ export default function SessionDetail() {
                 title="Emotional Challenges"
                 content={session.emotionalLows}
               />
+              <JournalSection
+                title="Focus & Presence"
+                content={session.focusQuality}
+              />
+              <JournalSection
+                title="Thought Process"
+                content={session.thoughtProcess}
+              />
             </>
-          )}
-          <JournalSection
-            title="Focus & Presence"
-            content={session.focusQuality}
-          />
-          {isPlay && (
-            <JournalSection
-              title="Thought Process"
-              content={session.thoughtProcess}
-            />
           )}
           <JournalSection
             title={isPlay ? "Lessons Learned" : "What Worked"}
