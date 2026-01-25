@@ -1,6 +1,21 @@
-import { pgTable, text, varchar, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const selfRatingsSchema = z.object({
+  confidence: z.number().min(1).max(10).optional(),
+  focus: z.number().min(1).max(10).optional(),
+  frustration: z.number().min(1).max(10).optional(),
+  anxiety: z.number().min(1).max(10).optional(),
+  patience: z.number().min(1).max(10).optional(),
+  "decision-making": z.number().min(1).max(10).optional(),
+  "self-talk": z.number().min(1).max(10).optional(),
+  pressure: z.number().min(1).max(10).optional(),
+  expectations: z.number().min(1).max(10).optional(),
+  acceptance: z.number().min(1).max(10).optional(),
+});
+
+export type SelfRatings = z.infer<typeof selfRatingsSchema>;
 
 export const sessionTypes = ["play", "practice"] as const;
 export type SessionType = typeof sessionTypes[number];
@@ -43,6 +58,7 @@ export const sessions = pgTable("sessions", {
   swingFocus: text("swing_focus"),
   confidenceBefore: integer("confidence_before"),
   confidenceAfter: integer("confidence_after"),
+  selfRatings: jsonb("self_ratings"),
   createdAt: varchar("created_at", { length: 30 }).notNull()
 });
 

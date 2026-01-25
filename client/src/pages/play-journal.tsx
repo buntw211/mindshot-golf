@@ -22,7 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles } from "lucide-react";
-import { insertSessionSchema, thoughtCategories, type ThoughtCategory } from "@shared/schema";
+import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 
 const playFormSchema = insertSessionSchema.extend({
   type: z.literal("play"),
@@ -31,7 +31,21 @@ const playFormSchema = insertSessionSchema.extend({
   score: z.coerce.number().min(50).max(150).optional(),
   overallMood: z.number().min(1).max(10),
   overallFocus: z.number().min(1).max(10),
+  selfRatings: selfRatingsSchema.optional(),
 });
+
+const categoryLabels: Record<ThoughtCategory, { label: string; lowLabel: string; highLabel: string }> = {
+  "confidence": { label: "Confidence", lowLabel: "Doubting", highLabel: "Confident" },
+  "focus": { label: "Focus", lowLabel: "Scattered", highLabel: "Locked In" },
+  "frustration": { label: "Frustration Management", lowLabel: "Easily Frustrated", highLabel: "Calm" },
+  "anxiety": { label: "Anxiety Level", lowLabel: "Anxious", highLabel: "Relaxed" },
+  "patience": { label: "Patience", lowLabel: "Impatient", highLabel: "Patient" },
+  "decision-making": { label: "Decision Making", lowLabel: "Uncertain", highLabel: "Decisive" },
+  "self-talk": { label: "Self-Talk Quality", lowLabel: "Critical", highLabel: "Supportive" },
+  "pressure": { label: "Pressure Handling", lowLabel: "Struggled", highLabel: "Thrived" },
+  "expectations": { label: "Expectations", lowLabel: "Unrealistic", highLabel: "Balanced" },
+  "acceptance": { label: "Acceptance", lowLabel: "Resisting", highLabel: "Accepting" },
+};
 
 type PlayFormData = z.infer<typeof playFormSchema>;
 
@@ -73,6 +87,12 @@ const guidedQuestions = [
     questions: [
       { field: "thoughtProcess", label: "Thought Process", question: "What were you thinking about during key shots? Were your thoughts helpful or distracting? What self-talk patterns did you notice?" },
     ],
+  },
+  {
+    section: "Self-Assessment",
+    fields: ["selfRatings"],
+    questions: [],
+    isSelfAssessment: true,
   },
   {
     section: "Lessons & Growth",
@@ -154,8 +174,29 @@ export default function PlayJournal() {
       lessonsLearned: "",
       gratitude: "",
       nextSessionGoals: "",
+      selfRatings: {
+        confidence: 5,
+        focus: 5,
+        frustration: 5,
+        anxiety: 5,
+        patience: 5,
+        "decision-making": 5,
+        "self-talk": 5,
+        pressure: 5,
+        expectations: 5,
+        acceptance: 5,
+      },
     },
   });
+
+  const selfRatings = form.watch("selfRatings") || {};
+
+  const updateSelfRating = (category: ThoughtCategory, value: number) => {
+    form.setValue("selfRatings", {
+      ...selfRatings,
+      [category]: value,
+    } as SelfRatings, { shouldDirty: true, shouldTouch: true });
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: PlayFormData) => {
@@ -315,32 +356,70 @@ export default function PlayJournal() {
             <Card>
               <CardHeader>
                 <CardTitle>{guidedQuestions[step - 1].section}</CardTitle>
-                <CardDescription>Take your time to reflect honestly</CardDescription>
+                <CardDescription>
+                  {(guidedQuestions[step - 1] as any).isSelfAssessment
+                    ? "Rate how you felt in each mental category to compare with your journal analysis"
+                    : "Take your time to reflect honestly"}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {guidedQuestions[step - 1].questions.map((q) => (
-                  <FormField
-                    key={q.field}
-                    control={form.control}
-                    name={q.field as keyof PlayFormData}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{q.label}</FormLabel>
-                        <p className="text-sm text-muted-foreground mb-2">{q.question}</p>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Write your thoughts..."
-                            className="min-h-[120px] resize-none"
-                            {...field}
-                            value={field.value as string || ""}
-                            data-testid={`textarea-${q.field}`}
+                {(guidedQuestions[step - 1] as any).isSelfAssessment ? (
+                  <div className="space-y-4">
+                    {thoughtCategories.map((category) => (
+                      <div key={category} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-sm font-medium">
+                            {categoryLabels[category].label}
+                          </Label>
+                          <span className="text-sm text-muted-foreground">
+                            {(selfRatings as SelfRatings)[category] || 5}/10
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground w-20 text-right">
+                            {categoryLabels[category].lowLabel}
+                          </span>
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={[(selfRatings as SelfRatings)[category] || 5]}
+                            onValueChange={([v]) => updateSelfRating(category, v)}
+                            className="flex-1"
+                            data-testid={`slider-self-${category}`}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+                          <span className="text-xs text-muted-foreground w-20">
+                            {categoryLabels[category].highLabel}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  guidedQuestions[step - 1].questions.map((q) => (
+                    <FormField
+                      key={q.field}
+                      control={form.control}
+                      name={q.field as keyof PlayFormData}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{q.label}</FormLabel>
+                          <p className="text-sm text-muted-foreground mb-2">{q.question}</p>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Write your thoughts..."
+                              className="min-h-[120px] resize-none"
+                              {...field}
+                              value={field.value as string || ""}
+                              data-testid={`textarea-${q.field}`}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))
+                )}
               </CardContent>
             </Card>
           )}

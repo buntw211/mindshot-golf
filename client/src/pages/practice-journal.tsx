@@ -28,7 +28,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles } from "lucide-react";
-import { insertSessionSchema, thoughtCategories, type ThoughtCategory } from "@shared/schema";
+import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
+import { Label } from "@/components/ui/label";
 
 const practiceFormSchema = insertSessionSchema.extend({
   type: z.literal("practice"),
@@ -37,9 +38,23 @@ const practiceFormSchema = insertSessionSchema.extend({
   duration: z.coerce.number().min(1, "Please enter duration").max(480),
   overallMood: z.number().min(1).max(10),
   overallFocus: z.number().min(1).max(10),
+  selfRatings: selfRatingsSchema.optional(),
 });
 
 type PracticeFormData = z.infer<typeof practiceFormSchema>;
+
+const categoryLabels: Record<ThoughtCategory, { label: string; lowLabel: string; highLabel: string }> = {
+  "confidence": { label: "Confidence", lowLabel: "Doubting", highLabel: "Confident" },
+  "focus": { label: "Focus", lowLabel: "Scattered", highLabel: "Locked In" },
+  "frustration": { label: "Frustration Management", lowLabel: "Easily Frustrated", highLabel: "Calm" },
+  "anxiety": { label: "Anxiety Level", lowLabel: "Anxious", highLabel: "Relaxed" },
+  "patience": { label: "Patience", lowLabel: "Impatient", highLabel: "Patient" },
+  "decision-making": { label: "Decision Making", lowLabel: "Uncertain", highLabel: "Decisive" },
+  "self-talk": { label: "Self-Talk Quality", lowLabel: "Critical", highLabel: "Supportive" },
+  "pressure": { label: "Pressure Handling", lowLabel: "Struggled", highLabel: "Thrived" },
+  "expectations": { label: "Expectations", lowLabel: "Unrealistic", highLabel: "Balanced" },
+  "acceptance": { label: "Acceptance", lowLabel: "Resisting", highLabel: "Accepting" },
+};
 
 const practiceTypes = [
   "Driving Range",
@@ -83,6 +98,12 @@ const guidedQuestions = [
       { field: "lessonsLearned", label: "What Worked", question: "What insights or improvements can you take to the course?" },
       { field: "nextSessionGoals", label: "Next Practice Goals", question: "What will you focus on in your next practice session?" },
     ],
+  },
+  {
+    section: "Self-Assessment",
+    fields: ["selfRatings"],
+    questions: [],
+    isSelfAssessment: true,
   },
 ];
 
@@ -152,8 +173,29 @@ export default function PracticeJournal() {
       confidenceAfter: 5,
       lessonsLearned: "",
       nextSessionGoals: "",
+      selfRatings: {
+        confidence: 5,
+        focus: 5,
+        frustration: 5,
+        anxiety: 5,
+        patience: 5,
+        "decision-making": 5,
+        "self-talk": 5,
+        pressure: 5,
+        expectations: 5,
+        acceptance: 5,
+      },
     },
   });
+
+  const selfRatings = form.watch("selfRatings") || {};
+
+  const updateSelfRating = (category: ThoughtCategory, value: number) => {
+    form.setValue("selfRatings", {
+      ...selfRatings,
+      [category]: value,
+    } as SelfRatings, { shouldDirty: true, shouldTouch: true });
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: PracticeFormData) => {
@@ -323,32 +365,70 @@ export default function PracticeJournal() {
             <Card>
               <CardHeader>
                 <CardTitle>{guidedQuestions[step - 1].section}</CardTitle>
-                <CardDescription>Take your time to reflect honestly</CardDescription>
+                <CardDescription>
+                  {(guidedQuestions[step - 1] as any).isSelfAssessment
+                    ? "Rate how you felt in each mental category to compare with your journal analysis"
+                    : "Take your time to reflect honestly"}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {guidedQuestions[step - 1].questions.map((q) => (
-                  <FormField
-                    key={q.field}
-                    control={form.control}
-                    name={q.field as keyof PracticeFormData}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{q.label}</FormLabel>
-                        <p className="text-sm text-muted-foreground mb-2">{q.question}</p>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Write your thoughts..."
-                            className="min-h-[120px] resize-none"
-                            {...field}
-                            value={field.value as string || ""}
-                            data-testid={`textarea-${q.field}`}
+                {(guidedQuestions[step - 1] as any).isSelfAssessment ? (
+                  <div className="space-y-4">
+                    {thoughtCategories.map((category) => (
+                      <div key={category} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-sm font-medium">
+                            {categoryLabels[category].label}
+                          </Label>
+                          <span className="text-sm text-muted-foreground">
+                            {(selfRatings as SelfRatings)[category] || 5}/10
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground w-20 text-right">
+                            {categoryLabels[category].lowLabel}
+                          </span>
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={[(selfRatings as SelfRatings)[category] || 5]}
+                            onValueChange={([v]) => updateSelfRating(category, v)}
+                            className="flex-1"
+                            data-testid={`slider-self-${category}`}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+                          <span className="text-xs text-muted-foreground w-20">
+                            {categoryLabels[category].highLabel}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  guidedQuestions[step - 1].questions.map((q) => (
+                    <FormField
+                      key={q.field}
+                      control={form.control}
+                      name={q.field as keyof PracticeFormData}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{q.label}</FormLabel>
+                          <p className="text-sm text-muted-foreground mb-2">{q.question}</p>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Write your thoughts..."
+                              className="min-h-[120px] resize-none"
+                              {...field}
+                              value={field.value as string || ""}
+                              data-testid={`textarea-${q.field}`}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))
+                )}
                 
                 {(guidedQuestions[step - 1] as { hasConfidenceTracking?: boolean }).hasConfidenceTracking && (
                   <div className="space-y-6 pt-4 border-t">
