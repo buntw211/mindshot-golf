@@ -19,7 +19,15 @@ import {
   Lightbulb,
   TrendingUp,
   Brain,
+  LogOut,
+  Crown,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useMembership } from "@/hooks/use-membership";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const journalItems = [
   {
@@ -59,6 +67,27 @@ const viewItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const { isPremium, remainingFreeEntries, canCreateJournal } = useMembership();
+
+  const handleUpgrade = async () => {
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+    }
+  };
+
+  const userInitials = user 
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'
+    : 'U';
 
   return (
     <Sidebar>
@@ -127,11 +156,66 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {!isPremium && (
+          <SidebarGroup>
+            <SidebarGroupContent className="p-2">
+              <div className="p-3 rounded-md bg-accent/50 border border-accent">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Free Trial</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {canCreateJournal 
+                    ? `${remainingFreeEntries} free ${remainingFreeEntries === 1 ? 'entry' : 'entries'} remaining`
+                    : "Free entries used up"}
+                </p>
+                <Button 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={handleUpgrade}
+                  data-testid="button-upgrade"
+                >
+                  Upgrade to Premium
+                </Button>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
-      <SidebarFooter className="p-4">
-        <div className="text-xs text-muted-foreground text-center">
-          Be present. Play with purpose.
-        </div>
+      <SidebarFooter className="p-4 space-y-3">
+        {user && (
+          <div className="flex items-center gap-3 p-2 rounded-md bg-accent/30">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={user.profileImageUrl || undefined} />
+              <AvatarFallback className="text-xs">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium truncate">
+                  {user.firstName || user.email?.split('@')[0] || 'User'}
+                </p>
+                {isPremium && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    <Crown className="w-3 h-3 mr-0.5" />
+                    Pro
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        )}
+        <a href="/api/logout" className="block">
+          <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-logout">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </a>
       </SidebarFooter>
     </Sidebar>
   );

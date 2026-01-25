@@ -34,8 +34,9 @@ export const thoughtCategories = [
 ] as const;
 export type ThoughtCategory = typeof thoughtCategories[number];
 
-export const sessions = pgTable("sessions", {
+export const journalEntries = pgTable("journal_entries", {
   id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 255 }),
   type: varchar("type", { length: 20 }).notNull(),
   date: varchar("date", { length: 10 }).notNull(),
   courseName: text("course_name"),
@@ -62,13 +63,19 @@ export const sessions = pgTable("sessions", {
   createdAt: varchar("created_at", { length: 30 }).notNull()
 });
 
-export const insertSessionSchema = createInsertSchema(sessions).omit({
+export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
   id: true,
   createdAt: true
 });
 
-export type InsertSession = z.infer<typeof insertSessionSchema>;
-export type Session = typeof sessions.$inferSelect;
+export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
+export type JournalEntry = typeof journalEntries.$inferSelect;
+
+// Backwards compatibility aliases
+export const sessions = journalEntries;
+export const insertSessionSchema = insertJournalEntrySchema;
+export type InsertSession = InsertJournalEntry;
+export type Session = JournalEntry;
 
 export interface PatternSummary {
   category: ThoughtCategory;
@@ -85,6 +92,9 @@ export interface MoodFocusTrend {
   focus: number;
   type: SessionType;
 }
+
+// Re-export auth schema
+export * from "./models/auth";
 
 export interface DashboardStats {
   totalSessions: number;

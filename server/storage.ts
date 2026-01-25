@@ -1,51 +1,92 @@
 import { 
-  sessions, 
-  type Session, 
-  type InsertSession,
+  journalEntries, 
+  type JournalEntry, 
+  type InsertJournalEntry,
   type PatternSummary,
   type DashboardStats,
   type MoodFocusTrend,
   type ThoughtCategory,
-  thoughtCategories
+  thoughtCategories,
+  users,
+  type User
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
+
+// Backwards compatibility type aliases
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  getSessions(): Promise<Session[]>;
-  getSession(id: string): Promise<Session | undefined>;
-  createSession(session: InsertSession): Promise<Session>;
+  getSessions(userId?: string): Promise<JournalEntry[]>;
+  getSession(id: string): Promise<JournalEntry | undefined>;
+  createSession(session: InsertJournalEntry, userId?: string): Promise<JournalEntry>;
   deleteSession(id: string): Promise<void>;
-  getPatterns(): Promise<PatternSummary[]>;
-  getDashboardStats(): Promise<DashboardStats>;
+  getPatterns(userId?: string): Promise<PatternSummary[]>;
+  getDashboardStats(userId?: string): Promise<DashboardStats>;
+  getUser(id: string): Promise<User | undefined>;
+  updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string; subscriptionStatus?: string }): Promise<User | undefined>;
+  incrementJournalCount(userId: string): Promise<number>;
+  getUserJournalCount(userId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getSessions(): Promise<Session[]> {
-    return await db.select().from(sessions).orderBy(desc(sessions.date));
+  async getSessions(userId?: string): Promise<JournalEntry[]> {
+    if (userId) {
+      return await db.select().from(journalEntries).where(eq(journalEntries.userId, userId)).orderBy(desc(journalEntries.date));
+    }
+    return await db.select().from(journalEntries).orderBy(desc(journalEntries.date));
   }
 
-  async getSession(id: string): Promise<Session | undefined> {
-    const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
+  async getSession(id: string): Promise<JournalEntry | undefined> {
+    const [session] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
     return session || undefined;
   }
 
-  async createSession(insertSession: InsertSession): Promise<Session> {
+  async createSession(insertSession: InsertJournalEntry, userId?: string): Promise<JournalEntry> {
     const id = randomUUID();
     const createdAt = new Date().toISOString();
     const [session] = await db
-      .insert(sessions)
-      .values({ ...insertSession, id, createdAt })
+      .insert(journalEntries)
+      .values({ ...insertSession, id, createdAt, userId: userId || null })
       .returning();
     return session;
   }
 
   async deleteSession(id: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.id, id));
+    await db.delete(journalEntries).where(eq(journalEntries.id, id));
   }
 
-  private analyzeSessionContent(session: Session): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string; subscriptionStatus?: string }): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...stripeInfo, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user || undefined;
+  }
+
+  async incrementJournalCount(userId: string): Promise<number> {
+    const user = await this.getUser(userId);
+    const currentCount = parseInt(user?.journalCount || "0", 10);
+    const newCount = currentCount + 1;
+    await db
+      .update(users)
+      .set({ journalCount: String(newCount), updatedAt: new Date() })
+      .where(eq(users.id, userId));
+    return newCount;
+  }
+
+  async getUserJournalCount(userId: string): Promise<number> {
+    const user = await this.getUser(userId);
+    return parseInt(user?.journalCount || "0", 10);
+  }
+
+  private analyzeSessionContent(session: JournalEntry): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {
     const result = new Map<ThoughtCategory, { positive: number; negative: number; neutral: number }>();
     
     for (const category of thoughtCategories) {
@@ -105,8 +146,8 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getPatterns(): Promise<PatternSummary[]> {
-    const allSessions = await this.getSessions();
+  async getPatterns(userId?: string): Promise<PatternSummary[]> {
+    const allSessions = await this.getSessions(userId);
     
     const aggregated = new Map<ThoughtCategory, { positive: number; negative: number; neutral: number }>();
     for (const category of thoughtCategories) {
@@ -149,9 +190,9 @@ export class DatabaseStorage implements IStorage {
     return patterns.sort((a, b) => b.count - a.count);
   }
 
-  async getDashboardStats(): Promise<DashboardStats> {
-    const allSessions = await this.getSessions();
-    const patterns = await this.getPatterns();
+  async getDashboardStats(userId?: string): Promise<DashboardStats> {
+    const allSessions = await this.getSessions(userId);
+    const patterns = await this.getPatterns(userId);
     
     const playSessions = allSessions.filter(s => s.type === "play");
     const practiceSessions = allSessions.filter(s => s.type === "practice");
