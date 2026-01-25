@@ -223,6 +223,95 @@ export default function Patterns() {
         </CardContent>
       </Card>
 
+      <Card data-testid="card-scale-explanation">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base">Understanding the Rating Scales</CardTitle>
+          </div>
+          <CardDescription>
+            Each self-assessment category uses a 1-10 scale. Here's what the numbers mean:
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <div className="font-semibold text-red-700 dark:text-red-400 mb-1">1-3: Struggling</div>
+              <p className="text-xs text-muted-foreground">
+                This area was a significant challenge. You noticed it affecting your game negatively.
+              </p>
+            </div>
+            <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <div className="font-semibold text-amber-700 dark:text-amber-400 mb-1">4-6: Moderate</div>
+              <p className="text-xs text-muted-foreground">
+                Average performance. Some good moments, some room for improvement.
+              </p>
+            </div>
+            <div className="p-3 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+              <div className="font-semibold text-green-700 dark:text-green-400 mb-1">7-10: Strong</div>
+              <p className="text-xs text-muted-foreground">
+                This area was a strength. You felt solid and it helped your performance.
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Category Scale Meanings</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Confidence:</span>
+                <span className="text-muted-foreground"> 1 = Doubting every shot → 10 = Total belief in yourself</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Focus:</span>
+                <span className="text-muted-foreground"> 1 = Mind wandering → 10 = Completely locked in</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Frustration:</span>
+                <span className="text-muted-foreground"> 1 = Easily upset → 10 = Calm through mistakes</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Anxiety:</span>
+                <span className="text-muted-foreground"> 1 = Very nervous → 10 = Completely relaxed</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Patience:</span>
+                <span className="text-muted-foreground"> 1 = Rushing/impatient → 10 = Accepting the process</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Decision Making:</span>
+                <span className="text-muted-foreground"> 1 = Uncertain/second-guessing → 10 = Decisive and committed</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Self-Talk:</span>
+                <span className="text-muted-foreground"> 1 = Critical inner voice → 10 = Supportive inner coach</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Pressure:</span>
+                <span className="text-muted-foreground"> 1 = Struggled under pressure → 10 = Thrived when it mattered</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Expectations:</span>
+                <span className="text-muted-foreground"> 1 = Unrealistic demands → 10 = Balanced and fair to yourself</span>
+              </div>
+              <div className="p-2 rounded bg-muted/50">
+                <span className="font-medium">Acceptance:</span>
+                <span className="text-muted-foreground"> 1 = Fighting results → 10 = Letting go and moving forward</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-3 bg-accent/50 rounded-md">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-sm">
+                <span className="font-medium">Tip:</span> Rate yourself honestly based on how you actually felt during the session, not how you wish you'd performed. Honest self-assessment is the foundation of real improvement.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {!hasPatterns ? (
         <Card className="p-12">
           <div className="text-center">
