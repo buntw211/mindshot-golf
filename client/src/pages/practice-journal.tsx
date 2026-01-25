@@ -27,9 +27,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles } from "lucide-react";
+import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock } from "lucide-react";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
+import { useMembership } from "@/hooks/use-membership";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const practiceFormSchema = insertSessionSchema.extend({
   type: z.literal("practice"),
@@ -155,6 +157,7 @@ export default function PracticeJournal() {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
+  const { canCreateJournal, remainingFreeEntries, isPremium, isLoading: membershipLoading } = useMembership();
 
   const form = useForm<PracticeFormData>({
     resolver: zodResolver(practiceFormSchema),
@@ -226,16 +229,65 @@ export default function PracticeJournal() {
 
   const totalSteps = guidedQuestions.length + 1;
 
+  const handleUpgrade = async () => {
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+    }
+  };
+
+  if (membershipLoading) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto space-y-6">
+        <Skeleton className="h-12 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (!canCreateJournal) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <Card className="p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-accent/50 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Free Trial Ended</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            You've used your 3 free journal entries. Upgrade to Premium for unlimited journaling and access to all features.
+          </p>
+          <Button onClick={handleUpgrade} data-testid="button-upgrade">
+            <Crown className="w-4 h-4 mr-2" />
+            Upgrade to Premium - $9.99/month
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
           <Target className="w-6 h-6 text-secondary-foreground" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold" data-testid="text-practice-title">Practice Session Journal</h1>
           <p className="text-muted-foreground">Reflect on your practice</p>
         </div>
+        {!isPremium && remainingFreeEntries > 0 && (
+          <Badge variant="secondary" className="shrink-0">
+            {remainingFreeEntries} free {remainingFreeEntries === 1 ? 'entry' : 'entries'} left
+          </Badge>
+        )}
       </div>
 
       <div className="flex gap-1 mb-6">
