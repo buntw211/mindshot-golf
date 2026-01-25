@@ -10,6 +10,25 @@ Key features:
 - Pattern analysis to identify recurring mental tendencies
 - Dashboard with session statistics and insights
 - Mental game tips and cognitive reframing suggestions
+- Self-assessment ratings with comparison to journal analysis
+- Premium membership system with free trial (3 entries)
+
+## Membership & Subscription
+
+### Free Trial
+- New users get 3 free journal entries with full feature access
+- After 3 entries, users must upgrade to Premium for continued journaling
+
+### Premium Subscription ($9.99/month or $79.99/year)
+- Unlimited journal entries
+- Advanced pattern analysis
+- Self-assessment comparison insights
+
+### Technical Implementation
+- **Authentication**: Replit OIDC Auth
+- **Payments**: Stripe subscription via stripe-replit-sync
+- **User Tracking**: Users table stores journalCount, stripeCustomerId, subscriptionStatus
+- **Feature Gating**: Backend enforces limits; frontend shows upgrade prompts
 
 ## User Preferences
 
