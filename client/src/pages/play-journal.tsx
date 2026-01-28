@@ -53,6 +53,15 @@ type PlayFormData = z.infer<typeof playFormSchema>;
 
 const guidedQuestions = [
   {
+    section: "Pre Round",
+    fields: ["preRoundMentalState", "preRoundGoals", "preRoundRoutine"],
+    questions: [
+      { field: "preRoundMentalState", label: "Mental State", question: "What was your mental state before teeing off?" },
+      { field: "preRoundGoals", label: "Mental Goals", question: "What were your mental goals for the round (such as committing to every shot)?" },
+      { field: "preRoundRoutine", label: "Pre-Round Routine", question: "Did you stick to your pre-round routine?" },
+    ],
+  },
+  {
     section: "Focus & Presence",
     fields: ["focusQuality"],
     questions: [
@@ -64,15 +73,6 @@ const guidedQuestions = [
     fields: ["thoughtProcess"],
     questions: [
       { field: "thoughtProcess", label: "Thought Process", question: "What were you thinking about during key shots? Were your thoughts helpful or distracting? What self-talk patterns did you notice?" },
-    ],
-  },
-  {
-    section: "Pre Round",
-    fields: ["preRoundMentalState", "preRoundGoals", "preRoundRoutine"],
-    questions: [
-      { field: "preRoundMentalState", label: "Mental State", question: "What was your mental state before teeing off?" },
-      { field: "preRoundGoals", label: "Mental Goals", question: "What were your mental goals for the round (such as committing to every shot)?" },
-      { field: "preRoundRoutine", label: "Pre-Round Routine", question: "Did you stick to your pre-round routine?" },
     ],
   },
   {
