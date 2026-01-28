@@ -53,30 +53,6 @@ type PlayFormData = z.infer<typeof playFormSchema>;
 
 const guidedQuestions = [
   {
-    section: "Before the Round",
-    fields: ["preRoundMindset", "preRoundRoutine"],
-    questions: [
-      { field: "preRoundMindset", label: "Pre-Round Mindset", question: "What was your mental state before teeing off? What expectations did you have?" },
-      { field: "preRoundRoutine", label: "Pre-Round Routine", question: "How well did you stick to your pre-round routine? Did it create the comfort and readiness you needed?" },
-    ],
-  },
-  {
-    section: "During the Round",
-    fields: ["keyMoments", "decisionsReflection"],
-    questions: [
-      { field: "keyMoments", label: "Key Moments", question: "Describe 2-3 moments that stood out mentally. What happened? How did you respond?" },
-      { field: "decisionsReflection", label: "Decision Making", question: "Reflect on your course management and shot decisions. Which choices felt confident? Which ones were rushed?" },
-    ],
-  },
-  {
-    section: "Emotional Journey",
-    fields: ["emotionalHighs", "emotionalLows"],
-    questions: [
-      { field: "emotionalHighs", label: "Emotional Highs", question: "What moments brought you joy or confidence today?" },
-      { field: "emotionalLows", label: "Emotional Challenges", question: "What moments challenged you emotionally? How did you handle frustration or disappointment?" },
-    ],
-  },
-  {
     section: "Focus & Presence",
     fields: ["focusQuality"],
     questions: [
@@ -91,19 +67,47 @@ const guidedQuestions = [
     ],
   },
   {
+    section: "Pre Round",
+    fields: ["preRoundMentalState", "preRoundGoals", "preRoundRoutine"],
+    questions: [
+      { field: "preRoundMentalState", label: "Mental State", question: "What was your mental state before teeing off?" },
+      { field: "preRoundGoals", label: "Mental Goals", question: "What were your mental goals for the round (such as committing to every shot)?" },
+      { field: "preRoundRoutine", label: "Pre-Round Routine", question: "Did you stick to your pre-round routine?" },
+    ],
+  },
+  {
+    section: "Performance & Mechanics",
+    fields: ["missPattern", "strokeGains", "gameCosts"],
+    questions: [
+      { field: "missPattern", label: "Miss Pattern", question: "What miss showed up repeatedly?" },
+      { field: "strokeGains", label: "Stroke Gains", question: "Where did you gain strokes?" },
+      { field: "gameCosts", label: "Game Costs", question: "What part of your game cost you the most shots?" },
+    ],
+  },
+  {
+    section: "Decisions",
+    fields: ["courseManagement", "targetSelection", "emotionalDecisions"],
+    questions: [
+      { field: "courseManagement", label: "Course Management", question: "Where did course management save or cost you shots?" },
+      { field: "targetSelection", label: "Target Selection", question: "Did you choose appropriate targets?" },
+      { field: "emotionalDecisions", label: "Emotional Decisions", question: "Did you let emotions cause you to make poor decisions?" },
+    ],
+  },
+  {
+    section: "Mental",
+    fields: ["adversityResponse", "routineCommitment", "joyMoments", "emotionalChallenges"],
+    questions: [
+      { field: "adversityResponse", label: "Adversity Response", question: "How did you respond after a bad hole or shot?" },
+      { field: "routineCommitment", label: "Routine Commitment", question: "Did you stay committed to your routine? If not, why?" },
+      { field: "joyMoments", label: "Joy Moments", question: "What moments brought you joy?" },
+      { field: "emotionalChallenges", label: "Emotional Challenges", question: "What challenged you emotionally and how did you handle it?" },
+    ],
+  },
+  {
     section: "Self-Assessment",
     fields: ["selfRatings"],
     questions: [],
     isSelfAssessment: true,
-  },
-  {
-    section: "Lessons & Growth",
-    fields: ["lessonsLearned", "gratitude", "nextSessionGoals"],
-    questions: [
-      { field: "lessonsLearned", label: "Lessons Learned", question: "What did this round teach you about your mental game?" },
-      { field: "gratitude", label: "Gratitude", question: "What are you grateful for from today's round?" },
-      { field: "nextSessionGoals", label: "Next Round Goals", question: "What mental skill will you focus on next time?" },
-    ],
   },
 ];
 
@@ -166,17 +170,21 @@ export default function PlayJournal() {
       score: undefined,
       overallMood: 5,
       overallFocus: 5,
-      preRoundMindset: "",
-      preRoundRoutine: "",
-      keyMoments: "",
-      decisionsReflection: "",
-      emotionalHighs: "",
-      emotionalLows: "",
       focusQuality: "",
       thoughtProcess: "",
-      lessonsLearned: "",
-      gratitude: "",
-      nextSessionGoals: "",
+      preRoundMentalState: "",
+      preRoundGoals: "",
+      preRoundRoutine: "",
+      missPattern: "",
+      strokeGains: "",
+      gameCosts: "",
+      courseManagement: "",
+      targetSelection: "",
+      emotionalDecisions: "",
+      adversityResponse: "",
+      routineCommitment: "",
+      joyMoments: "",
+      emotionalChallenges: "",
       selfRatings: {
         confidence: 5,
         focus: 5,
