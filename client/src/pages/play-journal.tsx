@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock } from "lucide-react";
+import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine } from "lucide-react";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { useMembership } from "@/hooks/use-membership";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -154,9 +154,12 @@ const reframingTips: Record<ThoughtCategory, { negative: string; reframe: string
   ],
 };
 
+type JournalMode = "guided" | "freewriting" | null;
+
 export default function PlayJournal() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [journalMode, setJournalMode] = useState<JournalMode>(null);
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
   const { canCreateJournal, remainingFreeEntries, isPremium, isLoading: membershipLoading } = useMembership();
@@ -185,6 +188,8 @@ export default function PlayJournal() {
       routineCommitment: "",
       joyMoments: "",
       emotionalChallenges: "",
+      journalMode: "",
+      freeWriting: "",
       selfRatings: {
         confidence: 5,
         focus: 5,
@@ -236,7 +241,7 @@ export default function PlayJournal() {
     mutation.mutate(data);
   };
 
-  const totalSteps = guidedQuestions.length + 1;
+  const totalSteps = journalMode === "freewriting" ? 3 : guidedQuestions.length + 2;
 
   const handleUpgrade = async () => {
     try {
@@ -311,8 +316,65 @@ export default function PlayJournal() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form 
+          onSubmit={form.handleSubmit(onSubmit)} 
+          className="space-y-6"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+              e.preventDefault();
+            }
+          }}
+        >
           {step === 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Your Journal Style</CardTitle>
+                <CardDescription>How would you like to reflect on your round?</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJournalMode("guided");
+                      form.setValue("journalMode", "guided");
+                      setStep(1);
+                    }}
+                    className={`p-6 rounded-lg border-2 text-left transition-all hover-elevate ${
+                      journalMode === "guided" ? "border-primary bg-primary/5" : "border-muted"
+                    }`}
+                    data-testid="button-guided-mode"
+                  >
+                    <BookOpen className="w-8 h-8 text-primary mb-3" />
+                    <h3 className="font-semibold mb-2">Guided Questions</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Structured prompts to help you reflect on pre-round prep, focus, decisions, and mental game.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJournalMode("freewriting");
+                      form.setValue("journalMode", "freewriting");
+                      setStep(1);
+                    }}
+                    className={`p-6 rounded-lg border-2 text-left transition-all hover-elevate ${
+                      journalMode === "freewriting" ? "border-primary bg-primary/5" : "border-muted"
+                    }`}
+                    data-testid="button-freewriting-mode"
+                  >
+                    <PenLine className="w-8 h-8 text-primary mb-3" />
+                    <h3 className="font-semibold mb-2">Free Writing</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Open-ended reflection with a simple prompt: "How did you do?"
+                    </p>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {step === 1 && (
             <Card>
               <CardHeader>
                 <CardTitle>Round Details</CardTitle>
@@ -412,18 +474,47 @@ export default function PlayJournal() {
             </Card>
           )}
 
-          {step > 0 && step <= guidedQuestions.length && (
+          {journalMode === "freewriting" && step === 2 && (
             <Card>
               <CardHeader>
-                <CardTitle>{guidedQuestions[step - 1].section}</CardTitle>
+                <CardTitle>How Did You Do?</CardTitle>
+                <CardDescription>Reflect freely on your round - thoughts, feelings, key moments, lessons learned</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="freeWriting"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Write your thoughts about your round..."
+                          className="min-h-[300px] resize-none"
+                          {...field}
+                          value={field.value as string || ""}
+                          data-testid="textarea-freewriting"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {journalMode === "guided" && step > 1 && step <= guidedQuestions.length + 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{guidedQuestions[step - 2].section}</CardTitle>
                 <CardDescription>
-                  {(guidedQuestions[step - 1] as any).isSelfAssessment
+                  {(guidedQuestions[step - 2] as any).isSelfAssessment
                     ? "Rate how you felt in each mental category to compare with your journal analysis"
                     : "Take your time to reflect honestly"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {(guidedQuestions[step - 1] as any).isSelfAssessment ? (
+                {(guidedQuestions[step - 2] as any).isSelfAssessment ? (
                   <div className="space-y-4">
                     {thoughtCategories.map((category) => (
                       <div key={category} className="space-y-2">
@@ -456,7 +547,7 @@ export default function PlayJournal() {
                     ))}
                   </div>
                 ) : (
-                  guidedQuestions[step - 1].questions.map((q) => (
+                  guidedQuestions[step - 2].questions.map((q) => (
                     <FormField
                       key={q.field}
                       control={form.control}
@@ -531,7 +622,13 @@ export default function PlayJournal() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStep(Math.max(0, step - 1))}
+              onClick={() => {
+                if (step === 1) {
+                  setJournalMode(null);
+                  form.setValue("journalMode", "");
+                }
+                setStep(Math.max(0, step - 1));
+              }}
               disabled={step === 0}
               data-testid="button-prev"
             >

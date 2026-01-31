@@ -60,6 +60,8 @@ export const journalEntries = pgTable("journal_entries", {
   routineCommitment: text("routine_commitment"),
   joyMoments: text("joy_moments"),
   emotionalChallenges: text("emotional_challenges"),
+  journalMode: text("journal_mode"),
+  freeWriting: text("free_writing"),
   preRoundMindset: text("pre_round_mindset"),
   keyMoments: text("key_moments"),
   decisionsReflection: text("decisions_reflection"),
