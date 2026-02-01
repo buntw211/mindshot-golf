@@ -65,25 +65,14 @@ const viewItems = [
   },
 ];
 
+import { useState } from "react";
+import { PricingModal } from "@/components/pricing-modal";
+
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { isPremium, remainingFreeEntries, canCreateJournal } = useMembership();
-
-  const handleUpgrade = async () => {
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-    }
-  };
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   const userInitials = user 
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'
@@ -173,7 +162,7 @@ export function AppSidebar() {
                 <Button 
                   size="sm" 
                   className="w-full" 
-                  onClick={handleUpgrade}
+                  onClick={() => setPricingOpen(true)}
                   data-testid="button-upgrade"
                 >
                   Upgrade to Premium
@@ -217,6 +206,7 @@ export function AppSidebar() {
           </Button>
         </a>
       </SidebarFooter>
+      <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
     </Sidebar>
   );
 }

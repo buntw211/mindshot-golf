@@ -25,6 +25,7 @@ import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { useMembership } from "@/hooks/use-membership";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PricingModal } from "@/components/pricing-modal";
 
 const playFormSchema = insertSessionSchema.extend({
   type: z.literal("play"),
@@ -244,20 +245,7 @@ export default function PlayJournal() {
   // Add +1 for the final "Review & Submit" step
   const totalSteps = journalMode === "freewriting" ? 4 : guidedQuestions.length + 3;
 
-  const handleUpgrade = async () => {
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-    }
-  };
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   if (membershipLoading) {
     return (
@@ -279,10 +267,11 @@ export default function PlayJournal() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             You've used your 3 free journal entries. Upgrade to Premium for unlimited journaling and access to all features.
           </p>
-          <Button onClick={handleUpgrade} data-testid="button-upgrade">
+          <Button onClick={() => setPricingOpen(true)} data-testid="button-upgrade">
             <Crown className="w-4 h-4 mr-2" />
-            Upgrade to Premium - $9.99/month
+            Upgrade to Premium
           </Button>
+          <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
         </Card>
       </div>
     );

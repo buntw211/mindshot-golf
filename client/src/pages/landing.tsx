@@ -130,7 +130,8 @@ export default function Landing() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-2">Premium - $9.99/mo</h3>
+                  <h3 className="font-semibold mb-2">Premium</h3>
+                  <p className="text-xs text-muted-foreground mb-2">$9.99/mo or $89.99/yr</p>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />

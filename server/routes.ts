@@ -11,6 +11,10 @@ import { sql } from "drizzle-orm";
 
 const FREE_JOURNAL_LIMIT = 3;
 
+const checkoutSchema = z.object({
+  interval: z.enum(["month", "year"]).optional(),
+});
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -55,11 +59,42 @@ export async function registerRoutes(
     }
   });
 
+  // Get available prices for display in UI
+  app.get("/api/prices", async (req, res) => {
+    try {
+      const pricesResult = await db.execute(
+        sql`SELECT id, unit_amount, currency, recurring_interval 
+            FROM stripe.prices 
+            WHERE active = true 
+            ORDER BY unit_amount ASC`
+      );
+      
+      const prices = pricesResult.rows.map((row: any) => ({
+        id: row.id,
+        amount: row.unit_amount / 100, // Convert from cents
+        currency: row.currency,
+        interval: row.recurring_interval
+      }));
+      
+      res.json({ prices });
+    } catch (error) {
+      console.error("Error fetching prices:", error);
+      res.status(500).json({ error: "Failed to fetch prices" });
+    }
+  });
+
   app.post("/api/checkout", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
       const email = req.user?.claims?.email;
       const user = await storage.getUser(userId);
+      
+      // Validate request body
+      const parseResult = checkoutSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid request body" });
+      }
+      const { interval } = parseResult.data;
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -72,9 +107,22 @@ export async function registerRoutes(
         customerId = customer.id;
       }
 
-      const pricesResult = await db.execute(
-        sql`SELECT id FROM stripe.prices WHERE active = true ORDER BY unit_amount ASC LIMIT 1`
-      );
+      // Query for the specific interval price, fallback to any active price
+      let pricesResult;
+      if (interval === 'year' || interval === 'month') {
+        pricesResult = await db.execute(
+          sql`SELECT id FROM stripe.prices 
+              WHERE active = true AND recurring_interval = ${interval} 
+              ORDER BY unit_amount ASC LIMIT 1`
+        );
+      }
+      
+      // Fallback to any active price if specific interval not found
+      if (!pricesResult || pricesResult.rows.length === 0) {
+        pricesResult = await db.execute(
+          sql`SELECT id FROM stripe.prices WHERE active = true ORDER BY unit_amount ASC LIMIT 1`
+        );
+      }
       
       if (pricesResult.rows.length === 0) {
         return res.status(400).json({ error: "No active prices found. Please create a subscription product in Stripe." });
@@ -178,7 +226,8 @@ export async function registerRoutes(
 
   app.delete("/api/sessions/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteSession(req.params.id);
+      const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await storage.deleteSession(sessionId);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting session:", error);

@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock } from "lucide-react";
+import { PricingModal } from "@/components/pricing-modal";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { useMembership } from "@/hooks/use-membership";
@@ -229,20 +230,7 @@ export default function PracticeJournal() {
 
   const totalSteps = guidedQuestions.length + 1;
 
-  const handleUpgrade = async () => {
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-    }
-  };
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   if (membershipLoading) {
     return (
@@ -264,10 +252,11 @@ export default function PracticeJournal() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             You've used your 3 free journal entries. Upgrade to Premium for unlimited journaling and access to all features.
           </p>
-          <Button onClick={handleUpgrade} data-testid="button-upgrade">
+          <Button onClick={() => setPricingOpen(true)} data-testid="button-upgrade">
             <Crown className="w-4 h-4 mr-2" />
-            Upgrade to Premium - $9.99/month
+            Upgrade to Premium
           </Button>
+          <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
         </Card>
       </div>
     );
