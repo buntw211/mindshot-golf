@@ -63,7 +63,7 @@ export async function registerRoutes(
   app.get("/api/prices", async (req, res) => {
     try {
       const pricesResult = await db.execute(
-        sql`SELECT id, unit_amount, currency, recurring_interval 
+        sql`SELECT id, unit_amount, currency, recurring->>'interval' as interval 
             FROM stripe.prices 
             WHERE active = true 
             ORDER BY unit_amount ASC`
@@ -73,7 +73,7 @@ export async function registerRoutes(
         id: row.id,
         amount: row.unit_amount / 100, // Convert from cents
         currency: row.currency,
-        interval: row.recurring_interval
+        interval: row.interval
       }));
       
       res.json({ prices });
@@ -112,7 +112,7 @@ export async function registerRoutes(
       if (interval === 'year' || interval === 'month') {
         pricesResult = await db.execute(
           sql`SELECT id FROM stripe.prices 
-              WHERE active = true AND recurring_interval = ${interval} 
+              WHERE active = true AND recurring->>'interval' = ${interval} 
               ORDER BY unit_amount ASC LIMIT 1`
         );
       }
