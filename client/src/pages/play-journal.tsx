@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine } from "lucide-react";
+import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar } from "lucide-react";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { useMembership } from "@/hooks/use-membership";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -241,7 +241,8 @@ export default function PlayJournal() {
     mutation.mutate(data);
   };
 
-  const totalSteps = journalMode === "freewriting" ? 3 : guidedQuestions.length + 2;
+  // Add +1 for the final "Review & Submit" step
+  const totalSteps = journalMode === "freewriting" ? 4 : guidedQuestions.length + 3;
 
   const handleUpgrade = async () => {
     try {
@@ -571,6 +572,48 @@ export default function PlayJournal() {
                     />
                   ))
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Review & Submit Step - Final step for both modes */}
+          {step === totalSteps - 1 && (
+            <Card className="border-primary/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-primary" />
+                  Ready to Submit?
+                </CardTitle>
+                <CardDescription>
+                  Review your entry before saving
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{form.watch("courseName") || "No course name"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {form.watch("date") ? new Date(form.watch("date")).toLocaleDateString() : "No date"}
+                    </span>
+                  </div>
+                  {form.watch("score") && (
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Score: {form.watch("score")}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>Mood: {form.watch("overallMood")}/10</span>
+                    <span>Focus: {form.watch("overallFocus")}/10</span>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Click "Save Entry" below to save your journal entry. You can view and review your entries in the Journal History section.
+                </p>
               </CardContent>
             </Card>
           )}
