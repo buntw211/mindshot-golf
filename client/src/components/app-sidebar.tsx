@@ -63,6 +63,12 @@ const viewItems = [
     icon: Lightbulb,
     description: "Reframing tips",
   },
+  {
+    title: "Pro Training",
+    url: "/pro-training",
+    icon: User,
+    description: "Live coaching",
+  },
 ];
 
 import { useState } from "react";
