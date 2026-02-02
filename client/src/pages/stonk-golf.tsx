@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Users, Dumbbell, Target, ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
+import { Brain, Users, Dumbbell, CheckCircle2, ExternalLink } from "lucide-react";
+import stonkLogo from "@assets/F81AEDEB-4A41-439A-AC59-A7BF0B4AB97A_1770050828508.jpeg";
 
 export default function StonkGolf() {
   return (
@@ -21,9 +22,12 @@ export default function StonkGolf() {
       <Card className="border-primary/20">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <Target className="w-7 h-7 text-primary-foreground" />
-            </div>
+            <img 
+              src={stonkLogo} 
+              alt="Stonk Golf Logo" 
+              className="w-14 h-14 rounded-lg object-cover"
+              data-testid="img-stonk-logo"
+            />
             <div>
               <CardTitle className="text-xl">Stonk Golf</CardTitle>
               <CardDescription className="text-base">Mental Golf Training Facility</CardDescription>
@@ -122,9 +126,12 @@ export default function StonkGolf() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Target className="w-5 h-5 text-primary" />
-            </div>
+            <img 
+              src={stonkLogo} 
+              alt="Stonk Golf Logo" 
+              className="w-10 h-10 rounded-full object-cover shrink-0"
+              data-testid="img-stonk-logo-small"
+            />
             <div>
               <h3 className="font-semibold mb-1">Complement Your Journey</h3>
               <p className="text-sm text-muted-foreground">
