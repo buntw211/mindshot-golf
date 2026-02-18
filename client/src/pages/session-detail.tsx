@@ -24,21 +24,57 @@ import {
   ArrowLeft,
   Trash2,
   Clock,
+  PenLine,
+  BookOpen,
 } from "lucide-react";
-import type { Session } from "@shared/schema";
+import type { Session, SelfRatings } from "@shared/schema";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-function JournalSection({ title, content }: { title: string; content: string | null }) {
+function JournalSection({ title, content, testId }: { title: string; content: string | null | undefined; testId?: string }) {
   if (!content) return null;
   
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid={testId}>
       <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
         {title}
       </h3>
       <p className="text-foreground whitespace-pre-wrap">{content}</p>
+    </div>
+  );
+}
+
+const ratingLabels: Record<string, string> = {
+  "confidence": "Confidence",
+  "focus": "Focus",
+  "frustration": "Frustration",
+  "anxiety": "Anxiety",
+  "patience": "Patience",
+  "decision-making": "Decision Making",
+  "self-talk": "Self Talk",
+  "pressure": "Pressure",
+  "expectations": "Expectations",
+  "acceptance": "Acceptance",
+};
+
+function SelfRatingsSection({ ratings }: { ratings: SelfRatings }) {
+  const entries = Object.entries(ratings).filter(([, val]) => val !== undefined && val !== null);
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="space-y-3" data-testid="section-self-ratings">
+      <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+        Self-Assessment Ratings
+      </h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {entries.map(([key, value]) => (
+          <div key={key} className="flex items-center justify-between bg-accent/30 rounded-md px-3 py-2">
+            <span className="text-sm">{ratingLabels[key] || key}</span>
+            <span className="font-semibold">{value}/10</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -115,6 +151,8 @@ export default function SessionDetail() {
   }
 
   const isPlay = session.type === "play";
+  const isFreeWrite = session.journalMode === "freeform";
+  const selfRatings = session.selfRatings as SelfRatings | null;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -167,7 +205,7 @@ export default function SessionDetail() {
                 <CardTitle className="text-2xl" data-testid="text-session-title">
                   {isPlay ? (session.courseName || "Round") : (session.practiceType || "Practice")}
                 </CardTitle>
-                <div className="flex items-center gap-4 text-muted-foreground mt-1">
+                <div className="flex items-center gap-4 text-muted-foreground mt-1 flex-wrap">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
                     <span>{format(new Date(session.date), "EEEE, MMMM d, yyyy")}</span>
@@ -185,13 +223,19 @@ export default function SessionDetail() {
               <Badge variant={isPlay ? "default" : "secondary"} className="text-sm">
                 {isPlay ? "Round" : "Practice"}
               </Badge>
+              {session.journalMode && (
+                <Badge variant="outline" className="text-xs" data-testid="badge-journal-mode">
+                  {isFreeWrite ? <PenLine className="w-3 h-3 mr-1" /> : <BookOpen className="w-3 h-3 mr-1" />}
+                  {isFreeWrite ? "Free Write" : "Guided"}
+                </Badge>
+              )}
               {isPlay && session.score && (
-                <span className="text-2xl font-bold">{session.score}</span>
+                <span className="text-2xl font-bold" data-testid="text-score">{session.score}</span>
               )}
             </div>
           </div>
 
-          <div className="flex gap-6 pt-2">
+          <div className="flex gap-6 pt-2 flex-wrap">
             {session.overallMood && (
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
@@ -199,7 +243,7 @@ export default function SessionDetail() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Mood</div>
-                  <div className="font-semibold">{session.overallMood}/10</div>
+                  <div className="font-semibold" data-testid="text-mood">{session.overallMood}/10</div>
                 </div>
               </div>
             )}
@@ -210,7 +254,7 @@ export default function SessionDetail() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Focus</div>
-                  <div className="font-semibold">{session.overallFocus}/10</div>
+                  <div className="font-semibold" data-testid="text-focus">{session.overallFocus}/10</div>
                 </div>
               </div>
             )}
@@ -218,24 +262,45 @@ export default function SessionDetail() {
         </CardHeader>
 
         <CardContent className="space-y-8">
+          {isFreeWrite && session.freeWriting && (
+            <JournalSection
+              title="Free Writing"
+              content={session.freeWriting}
+              testId="section-free-writing"
+            />
+          )}
+
           <JournalSection
             title={isPlay ? "Pre-Round Mindset" : "Session Goals"}
             content={session.preRoundMindset}
+            testId="section-pre-round-mindset"
+          />
+          <JournalSection
+            title="Pre-Round Mental State"
+            content={session.preRoundMentalState}
+            testId="section-pre-round-mental-state"
+          />
+          <JournalSection
+            title="Pre-Round Goals"
+            content={session.preRoundGoals}
+            testId="section-pre-round-goals"
           />
           {isPlay && (
             <JournalSection
               title="Pre-Round Routine"
               content={session.preRoundRoutine}
+              testId="section-pre-round-routine"
             />
           )}
+
           {!isPlay && session.swingFocus && (
-            <div className="space-y-4">
+            <div className="space-y-4" data-testid="section-swing-focus">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
                 Swing Work
               </h3>
               <p className="text-foreground whitespace-pre-wrap">{session.swingFocus}</p>
               {(session.confidenceBefore || session.confidenceAfter) && (
-                <div className="flex gap-6 pt-2">
+                <div className="flex gap-6 pt-2 flex-wrap">
                   {session.confidenceBefore && (
                     <div className="flex items-center gap-2 bg-accent/50 rounded-md px-3 py-2">
                       <div className="text-sm text-muted-foreground">Before:</div>
@@ -269,48 +334,110 @@ export default function SessionDetail() {
               )}
             </div>
           )}
+
+          <JournalSection
+            title="Focus & Presence"
+            content={session.focusQuality}
+            testId="section-focus-quality"
+          />
+          <JournalSection
+            title="Thought Process"
+            content={session.thoughtProcess}
+            testId="section-thought-process"
+          />
+
           <JournalSection
             title="Key Moments"
             content={session.keyMoments}
+            testId="section-key-moments"
           />
+
+          <JournalSection
+            title="Miss Patterns"
+            content={session.missPattern}
+            testId="section-miss-pattern"
+          />
+          <JournalSection
+            title="Stroke Gains"
+            content={session.strokeGains}
+            testId="section-stroke-gains"
+          />
+          <JournalSection
+            title="Game Costs"
+            content={session.gameCosts}
+            testId="section-game-costs"
+          />
+
           <JournalSection
             title={isPlay ? "Decision Making" : "Quality & Presence"}
             content={session.decisionsReflection}
+            testId="section-decisions-reflection"
           />
-          {isPlay && (
-            <>
-              <JournalSection
-                title="Emotional Highs"
-                content={session.emotionalHighs}
-              />
-              <JournalSection
-                title="Emotional Challenges"
-                content={session.emotionalLows}
-              />
-              <JournalSection
-                title="Focus & Presence"
-                content={session.focusQuality}
-              />
-              <JournalSection
-                title="Thought Process"
-                content={session.thoughtProcess}
-              />
-            </>
-          )}
+          <JournalSection
+            title="Course Management"
+            content={session.courseManagement}
+            testId="section-course-management"
+          />
+          <JournalSection
+            title="Target Selection"
+            content={session.targetSelection}
+            testId="section-target-selection"
+          />
+          <JournalSection
+            title="Emotional Decisions"
+            content={session.emotionalDecisions}
+            testId="section-emotional-decisions"
+          />
+
+          <JournalSection
+            title="Emotional Highs"
+            content={session.emotionalHighs}
+            testId="section-emotional-highs"
+          />
+          <JournalSection
+            title="Emotional Challenges"
+            content={session.emotionalLows}
+            testId="section-emotional-lows"
+          />
+          <JournalSection
+            title="Joy Moments"
+            content={session.joyMoments}
+            testId="section-joy-moments"
+          />
+          <JournalSection
+            title="Emotional Challenges (Detailed)"
+            content={session.emotionalChallenges}
+            testId="section-emotional-challenges"
+          />
+
+          <JournalSection
+            title="Adversity Response"
+            content={session.adversityResponse}
+            testId="section-adversity-response"
+          />
+          <JournalSection
+            title="Routine Commitment"
+            content={session.routineCommitment}
+            testId="section-routine-commitment"
+          />
+
           <JournalSection
             title={isPlay ? "Lessons Learned" : "What Worked"}
             content={session.lessonsLearned}
+            testId="section-lessons-learned"
           />
-          {session.gratitude && (
-            <JournalSection
-              title="Gratitude"
-              content={session.gratitude}
-            />
-          )}
+          <JournalSection
+            title="Gratitude"
+            content={session.gratitude}
+            testId="section-gratitude"
+          />
           <JournalSection
             title="Next Session Goals"
             content={session.nextSessionGoals}
+            testId="section-next-goals"
           />
+
+          {selfRatings && <SelfRatingsSection ratings={selfRatings} />}
         </CardContent>
       </Card>
     </div>
