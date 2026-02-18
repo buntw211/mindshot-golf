@@ -15,6 +15,92 @@ const checkoutSchema = z.object({
   interval: z.enum(["month", "year"]).optional(),
 });
 
+async function checkPremiumStatus(userId: string, user: any): Promise<{ isPremium: boolean; subscriptionStatus: string | null }> {
+  let isPremium = false;
+  let subscriptionStatus: string | null = null;
+
+  if (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") {
+    isPremium = true;
+    subscriptionStatus = user.subscriptionStatus;
+    return { isPremium, subscriptionStatus };
+  }
+
+  if (user.stripeCustomerId) {
+    const subResult = await db.execute(
+      sql`SELECT status FROM stripe.subscriptions 
+          WHERE customer = ${user.stripeCustomerId} 
+          AND status IN ('active', 'trialing')
+          LIMIT 1`
+    );
+    if (subResult.rows.length > 0) {
+      isPremium = true;
+      subscriptionStatus = subResult.rows[0].status as string;
+    }
+  }
+
+  if (!isPremium) {
+    const subResult = await db.execute(
+      sql`SELECT s.status FROM stripe.subscriptions s
+          JOIN stripe.customers c ON s.customer = c.id
+          WHERE c.metadata->>'userId' = ${userId}
+          AND s.status IN ('active', 'trialing')
+          LIMIT 1`
+    );
+    if (subResult.rows.length > 0) {
+      isPremium = true;
+      subscriptionStatus = subResult.rows[0].status as string;
+    }
+  }
+
+  if (!isPremium) {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const customers = await stripe.customers.search({
+        query: `metadata['userId']:'${userId}'`,
+      });
+      if (customers.data.length > 0) {
+        const customerId = customers.data[0].id;
+        if (!user.stripeCustomerId) {
+          await storage.updateUserStripeInfo(userId, { stripeCustomerId: customerId });
+        }
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'active',
+          limit: 1,
+        });
+        if (subscriptions.data.length > 0) {
+          isPremium = true;
+          subscriptionStatus = subscriptions.data[0].status;
+          await storage.updateUserStripeInfo(userId, {
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptions.data[0].id,
+            subscriptionStatus: 'active'
+          });
+        } else {
+          const trialingSubscriptions = await stripe.subscriptions.list({
+            customer: customerId,
+            status: 'trialing',
+            limit: 1,
+          });
+          if (trialingSubscriptions.data.length > 0) {
+            isPremium = true;
+            subscriptionStatus = trialingSubscriptions.data[0].status;
+            await storage.updateUserStripeInfo(userId, {
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: trialingSubscriptions.data[0].id,
+              subscriptionStatus: 'trialing'
+            });
+          }
+        }
+      }
+    } catch (stripeError) {
+      console.error("Stripe API fallback error:", stripeError);
+    }
+  }
+
+  return { isPremium, subscriptionStatus };
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -40,101 +126,7 @@ export async function registerRoutes(
       }
 
       const journalCount = parseInt(user.journalCount || "0", 10);
-      
-      // Check for active subscription directly in Stripe tables
-      // First check by stored customer ID, then by userId in metadata
-      let isPremium = false;
-      let subscriptionStatus = null;
-      
-      if (user.stripeCustomerId) {
-        // Check subscription by stored customer ID in local sync
-        const subResult = await db.execute(
-          sql`SELECT status FROM stripe.subscriptions 
-              WHERE customer = ${user.stripeCustomerId} 
-              AND status IN ('active', 'trialing')
-              LIMIT 1`
-        );
-        if (subResult.rows.length > 0) {
-          isPremium = true;
-          subscriptionStatus = subResult.rows[0].status;
-        }
-      }
-      
-      // Also check by userId in customer metadata (covers cases where customer_id wasn't stored yet)
-      if (!isPremium) {
-        const subResult = await db.execute(
-          sql`SELECT s.status FROM stripe.subscriptions s
-              JOIN stripe.customers c ON s.customer = c.id
-              WHERE c.metadata->>'userId' = ${userId}
-              AND s.status IN ('active', 'trialing')
-              LIMIT 1`
-        );
-        if (subResult.rows.length > 0) {
-          isPremium = true;
-          subscriptionStatus = subResult.rows[0].status;
-        }
-      }
-      
-      // Fallback: Query Stripe API directly if local sync doesn't have data
-      if (!isPremium) {
-        try {
-          const stripe = await getUncachableStripeClient();
-          
-          // Find customer by userId in metadata
-          const customers = await stripe.customers.search({
-            query: `metadata['userId']:'${userId}'`,
-          });
-          
-          if (customers.data.length > 0) {
-            const customerId = customers.data[0].id;
-            
-            // Save customer ID if not already stored
-            if (!user.stripeCustomerId) {
-              await storage.updateUserStripeInfo(userId, { stripeCustomerId: customerId });
-            }
-            
-            // Check for active subscriptions directly from Stripe API
-            const subscriptions = await stripe.subscriptions.list({
-              customer: customerId,
-              status: 'active',
-              limit: 1,
-            });
-            
-            if (subscriptions.data.length > 0) {
-              isPremium = true;
-              subscriptionStatus = subscriptions.data[0].status;
-              // Persist subscription info to avoid repeated API calls
-              await storage.updateUserStripeInfo(userId, { 
-                stripeCustomerId: customerId,
-                stripeSubscriptionId: subscriptions.data[0].id,
-                subscriptionStatus: 'active'
-              });
-              console.log(`Found active subscription for user ${userId} via Stripe API fallback - persisted to DB`);
-            } else {
-              // Also check for trialing status
-              const trialingSubscriptions = await stripe.subscriptions.list({
-                customer: customerId,
-                status: 'trialing',
-                limit: 1,
-              });
-              if (trialingSubscriptions.data.length > 0) {
-                isPremium = true;
-                subscriptionStatus = trialingSubscriptions.data[0].status;
-                // Persist subscription info to avoid repeated API calls
-                await storage.updateUserStripeInfo(userId, { 
-                  stripeCustomerId: customerId,
-                  stripeSubscriptionId: trialingSubscriptions.data[0].id,
-                  subscriptionStatus: 'trialing'
-                });
-                console.log(`Found trialing subscription for user ${userId} via Stripe API fallback - persisted to DB`);
-              }
-            }
-          }
-        } catch (stripeError) {
-          console.error("Stripe API fallback error:", stripeError);
-          // Continue with non-premium status if API fails
-        }
-      }
+      const { isPremium, subscriptionStatus } = await checkPremiumStatus(userId, user);
       
       const canCreateJournal = isPremium || journalCount < FREE_JOURNAL_LIMIT;
       const remainingFreeEntries = Math.max(0, FREE_JOURNAL_LIMIT - journalCount);
@@ -294,7 +286,7 @@ export async function registerRoutes(
       }
 
       const journalCount = parseInt(user.journalCount || "0", 10);
-      const isPremium = user.subscriptionStatus === "active";
+      const { isPremium } = await checkPremiumStatus(userId, user);
       
       if (!isPremium && journalCount >= FREE_JOURNAL_LIMIT) {
         return res.status(403).json({ 
@@ -345,8 +337,11 @@ export async function registerRoutes(
     try {
       const userId = req.user?.claims?.sub;
       const user = await storage.getUser(userId);
-      const journalCount = parseInt(user?.journalCount || "0", 10);
-      const isPremium = user?.subscriptionStatus === "active";
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const journalCount = parseInt(user.journalCount || "0", 10);
+      const { isPremium } = await checkPremiumStatus(userId, user);
       
       if (!isPremium && journalCount > FREE_JOURNAL_LIMIT) {
         return res.status(403).json({ 
