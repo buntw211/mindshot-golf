@@ -20,6 +20,7 @@ export interface IStorage {
   getSessions(userId?: string): Promise<JournalEntry[]>;
   getSession(id: string): Promise<JournalEntry | undefined>;
   createSession(session: InsertJournalEntry, userId?: string): Promise<JournalEntry>;
+  updateSession(id: string, data: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined>;
   deleteSession(id: string): Promise<void>;
   getPatterns(userId?: string): Promise<PatternSummary[]>;
   getDashboardStats(userId?: string): Promise<DashboardStats>;
@@ -50,6 +51,15 @@ export class DatabaseStorage implements IStorage {
       .values({ ...insertSession, id, createdAt, userId: userId || null })
       .returning();
     return session;
+  }
+
+  async updateSession(id: string, data: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
+    const [updated] = await db
+      .update(journalEntries)
+      .set(data)
+      .where(eq(journalEntries.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteSession(id: string): Promise<void> {

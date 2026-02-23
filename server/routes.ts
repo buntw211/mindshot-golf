@@ -342,6 +342,25 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/sessions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const session = await storage.getSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      const userId = req.user?.claims?.sub;
+      if (session.userId !== userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      const updated = await storage.updateSession(sessionId, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating session:", error);
+      res.status(500).json({ error: "Failed to update session" });
+    }
+  });
+
   app.delete("/api/sessions/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
