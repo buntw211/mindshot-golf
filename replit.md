@@ -11,6 +11,7 @@ Key features:
 - Dashboard with session statistics and insights
 - Mental game tips and cognitive reframing suggestions
 - Self-assessment ratings with comparison to journal analysis
+- Scorecard photo upload for future reference
 - Premium membership system with free trial (3 entries)
 
 ## Membership & Subscription

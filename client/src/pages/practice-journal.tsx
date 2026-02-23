@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock } from "lucide-react";
+import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, Camera, X, Image } from "lucide-react";
 import { PricingModal } from "@/components/pricing-modal";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
@@ -158,6 +158,8 @@ export default function PracticeJournal() {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
+  const [scorecardPreview, setScorecardPreview] = useState<string | null>(null);
+  const [scorecardUploading, setScorecardUploading] = useState(false);
   const { canCreateJournal, remainingFreeEntries, isPremium, isLoading: membershipLoading } = useMembership();
 
   const form = useForm<PracticeFormData>({
@@ -224,11 +226,41 @@ export default function PracticeJournal() {
     },
   });
 
+  const handleScorecardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setScorecardUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("scorecard", file);
+      const res = await fetch("/api/upload/scorecard", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      form.setValue("scorecardImage", url);
+      setScorecardPreview(url);
+      toast({ title: "Photo uploaded", description: "Scorecard photo attached to your entry." });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not upload the photo. Please try again.", variant: "destructive" });
+    } finally {
+      setScorecardUploading(false);
+    }
+  };
+
+  const removeScorecardPhoto = () => {
+    form.setValue("scorecardImage", "");
+    setScorecardPreview(null);
+  };
+
   const onSubmit = (data: PracticeFormData) => {
     mutation.mutate(data);
   };
 
-  const totalSteps = guidedQuestions.length + 1;
+  const totalSteps = guidedQuestions.length + 2;
 
   const [pricingOpen, setPricingOpen] = useState(false);
 
@@ -519,6 +551,65 @@ export default function PracticeJournal() {
                       />
                     </div>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {step === totalSteps - 1 && (
+            <Card className="border-primary/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  Scorecard Photo
+                </CardTitle>
+                <CardDescription>
+                  Attach a photo of your scorecard for future reference (optional)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {scorecardPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={scorecardPreview}
+                      alt="Scorecard"
+                      className="rounded-lg border max-h-48 object-contain"
+                      data-testid="img-scorecard-preview"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                      onClick={removeScorecardPhoto}
+                      data-testid="button-remove-scorecard"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors hover:border-primary/50 hover:bg-primary/5 ${
+                      scorecardUploading ? "opacity-50 pointer-events-none" : ""
+                    }`}
+                    data-testid="label-scorecard-upload"
+                  >
+                    <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm font-medium">
+                      {scorecardUploading ? "Uploading..." : "Tap to add scorecard photo"}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG, or WEBP up to 10MB
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                      className="hidden"
+                      onChange={handleScorecardUpload}
+                      disabled={scorecardUploading}
+                      data-testid="input-scorecard-upload"
+                    />
+                  </label>
                 )}
               </CardContent>
             </Card>

@@ -26,6 +26,7 @@ import {
   Clock,
   PenLine,
   BookOpen,
+  Camera,
 } from "lucide-react";
 import type { Session, SelfRatings } from "@shared/schema";
 import { format } from "date-fns";
@@ -438,6 +439,23 @@ export default function SessionDetail() {
           />
 
           {selfRatings && <SelfRatingsSection ratings={selfRatings} />}
+
+          {session.scorecardImage && (
+            <div className="space-y-3" data-testid="section-scorecard">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Scorecard Photo
+              </h3>
+              <a href={session.scorecardImage} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={session.scorecardImage}
+                  alt="Scorecard"
+                  className="rounded-lg border max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                  data-testid="img-scorecard"
+                />
+              </a>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

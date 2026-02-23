@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar } from "lucide-react";
+import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar, Camera, X, Image } from "lucide-react";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { useMembership } from "@/hooks/use-membership";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -163,6 +163,8 @@ export default function PlayJournal() {
   const [journalMode, setJournalMode] = useState<JournalMode>(null);
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
+  const [scorecardPreview, setScorecardPreview] = useState<string | null>(null);
+  const [scorecardUploading, setScorecardUploading] = useState(false);
   const { canCreateJournal, remainingFreeEntries, isPremium, isLoading: membershipLoading } = useMembership();
 
   const form = useForm<PlayFormData>({
@@ -237,6 +239,36 @@ export default function PlayJournal() {
       });
     },
   });
+
+  const handleScorecardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setScorecardUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("scorecard", file);
+      const res = await fetch("/api/upload/scorecard", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      form.setValue("scorecardImage", url);
+      setScorecardPreview(url);
+      toast({ title: "Photo uploaded", description: "Scorecard photo attached to your entry." });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not upload the photo. Please try again.", variant: "destructive" });
+    } finally {
+      setScorecardUploading(false);
+    }
+  };
+
+  const removeScorecardPhoto = () => {
+    form.setValue("scorecardImage", "");
+    setScorecardPreview(null);
+  };
 
   const onSubmit = (data: PlayFormData) => {
     mutation.mutate(data);
@@ -600,7 +632,56 @@ export default function PlayJournal() {
                     <span>Focus: {form.watch("overallFocus")}/10</span>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Camera className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Scorecard Photo (optional)</span>
+                  </div>
+                  {scorecardPreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={scorecardPreview}
+                        alt="Scorecard"
+                        className="rounded-lg border max-h-48 object-contain"
+                        data-testid="img-scorecard-preview"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={removeScorecardPhoto}
+                        data-testid="button-remove-scorecard"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label
+                      className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors hover:border-primary/50 hover:bg-primary/5 ${
+                        scorecardUploading ? "opacity-50 pointer-events-none" : ""
+                      }`}
+                      data-testid="label-scorecard-upload"
+                    >
+                      <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium">
+                        {scorecardUploading ? "Uploading..." : "Tap to add scorecard photo"}
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-1">
+                        JPG, PNG, or WEBP up to 10MB
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        className="hidden"
+                        onChange={handleScorecardUpload}
+                        disabled={scorecardUploading}
+                        data-testid="input-scorecard-upload"
+                      />
+                    </label>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">
                   Click "Save Entry" below to save your journal entry. You can view and review your entries in the Journal History section.
                 </p>
               </CardContent>

@@ -8,6 +8,27 @@ import { stripeService } from "./stripeService";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import { randomUUID } from "crypto";
+import express from "express";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+const uploadStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, `${randomUUID()}${ext}`);
+  },
+});
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
 
 const FREE_JOURNAL_LIMIT = 3;
 
@@ -106,6 +127,16 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  app.use("/uploads", express.static(uploadDir));
+
+  app.post("/api/upload/scorecard", isAuthenticated, upload.single("scorecard"), (req: any, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image file provided or invalid file type" });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: imageUrl });
+  });
+
   app.get("/api/stripe/publishable-key", async (req, res) => {
     try {
       const publishableKey = await getStripePublishableKey();

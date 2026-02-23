@@ -74,6 +74,7 @@ export const journalEntries = pgTable("journal_entries", {
   confidenceBefore: integer("confidence_before"),
   confidenceAfter: integer("confidence_after"),
   selfRatings: jsonb("self_ratings"),
+  scorecardImage: text("scorecard_image"),
   createdAt: varchar("created_at", { length: 30 }).notNull()
 });
 
