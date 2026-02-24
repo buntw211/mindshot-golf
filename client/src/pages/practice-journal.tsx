@@ -255,7 +255,7 @@ export default function PracticeJournal() {
     mutation.mutate(data);
   };
 
-  const totalSteps = guidedQuestions.length + 1;
+  const totalSteps = guidedQuestions.length + 2;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -567,6 +567,38 @@ export default function PracticeJournal() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {step === totalSteps - 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Review & Submit</CardTitle>
+                <CardDescription>Review your entry before saving</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Practice Type:</span>
+                    <p className="font-medium" data-testid="text-review-practice-type">{form.getValues("practiceType") || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Date:</span>
+                    <p className="font-medium" data-testid="text-review-date">{form.getValues("date")}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Duration:</span>
+                    <p className="font-medium" data-testid="text-review-duration">{form.getValues("duration")} minutes</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Mood / Focus:</span>
+                    <p className="font-medium" data-testid="text-review-mood-focus">{form.getValues("overallMood")}/10 &middot; {form.getValues("overallFocus")}/10</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground pt-2">
+                  Press <strong>Save Entry</strong> when you're ready, or go back to make changes.
+                </p>
               </CardContent>
             </Card>
           )}
