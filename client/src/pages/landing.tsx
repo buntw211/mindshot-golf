@@ -50,11 +50,11 @@ export default function Landing() {
           <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              3 free journal entries
+              Unlimited journal entries
             </span>
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              No credit card required
+              Free to use
             </span>
           </div>
         </section>
@@ -106,48 +106,29 @@ export default function Landing() {
         <section className="max-w-4xl mx-auto px-4 py-16">
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="py-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">Try It Free</h2>
+              <h2 className="text-2xl font-bold mb-4">Start Journaling Today</h2>
               <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                Start with 3 free journal entries to experience how MindShot helps you 
-                understand and improve your mental game. Upgrade to Premium for unlimited access.
+                Sign up for free and start tracking your mental game right away.
+                All features are included at no cost.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-md mx-auto text-left">
-                <div>
-                  <h3 className="font-semibold mb-2">Free</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      3 journal entries
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Basic pattern insights
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Tips library access
-                    </li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Premium</h3>
-                  <p className="text-xs text-muted-foreground mb-2">$9.99/mo or $89.99/yr</p>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Unlimited journal entries
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Advanced pattern analysis
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Self-assessment comparison
-                    </li>
-                  </ul>
-                </div>
-              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground max-w-xs mx-auto text-left">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Unlimited journal entries
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Pattern analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Self-assessment comparison
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Tips library access
+                </li>
+              </ul>
             </CardContent>
           </Card>
         </section>

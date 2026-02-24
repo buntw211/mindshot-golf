@@ -21,11 +21,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Crown, Lock, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar, Camera, X, Image } from "lucide-react";
+import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar, Camera, X, Image } from "lucide-react";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
-import { useMembership } from "@/hooks/use-membership";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PricingModal } from "@/components/pricing-modal";
 
 const playFormSchema = insertSessionSchema.extend({
   type: z.literal("play"),
@@ -165,8 +162,6 @@ export default function PlayJournal() {
   const [selectedCategory, setSelectedCategory] = useState<ThoughtCategory | null>(null);
   const [scorecardPreview, setScorecardPreview] = useState<string | null>(null);
   const [scorecardUploading, setScorecardUploading] = useState(false);
-  const { canCreateJournal, remainingFreeEntries, isPremium, isLoading: membershipLoading } = useMembership();
-
   const form = useForm<PlayFormData>({
     resolver: zodResolver(playFormSchema),
     defaultValues: {
@@ -277,38 +272,6 @@ export default function PlayJournal() {
   // Add +1 for the final "Review & Submit" step
   const totalSteps = journalMode === "freewriting" ? 4 : guidedQuestions.length + 3;
 
-  const [pricingOpen, setPricingOpen] = useState(false);
-
-  if (membershipLoading) {
-    return (
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <Skeleton className="h-12 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  if (!canCreateJournal) {
-    return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <Card className="p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-accent/50 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h2 className="text-xl font-bold mb-2">Free Trial Ended</h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            You've used your 3 free journal entries. Upgrade to Premium for unlimited journaling and access to all features.
-          </p>
-          <Button onClick={() => setPricingOpen(true)} data-testid="button-upgrade">
-            <Crown className="w-4 h-4 mr-2" />
-            Upgrade to Premium
-          </Button>
-          <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -319,11 +282,6 @@ export default function PlayJournal() {
           <h1 className="text-2xl font-bold" data-testid="text-play-title">Post-Round Journal</h1>
           <p className="text-muted-foreground">Reflect on your mental game</p>
         </div>
-        {!isPremium && remainingFreeEntries > 0 && (
-          <Badge variant="secondary" className="shrink-0">
-            {remainingFreeEntries} free {remainingFreeEntries === 1 ? 'entry' : 'entries'} left
-          </Badge>
-        )}
       </div>
 
       <div className="flex gap-1 mb-6">

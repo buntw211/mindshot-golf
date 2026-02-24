@@ -12,24 +12,6 @@ Key features:
 - Mental game tips and cognitive reframing suggestions
 - Self-assessment ratings with comparison to journal analysis
 - Scorecard photo upload for future reference
-- Premium membership system with free trial (3 entries)
-
-## Membership & Subscription
-
-### Free Trial
-- New users get 3 free journal entries with full feature access
-- After 3 entries, users must upgrade to Premium for continued journaling
-
-### Premium Subscription ($9.99/month or $79.99/year)
-- Unlimited journal entries
-- Advanced pattern analysis
-- Self-assessment comparison insights
-
-### Technical Implementation
-- **Authentication**: Replit OIDC Auth
-- **Payments**: Stripe subscription via stripe-replit-sync
-- **User Tracking**: Users table stores journalCount, stripeCustomerId, subscriptionStatus
-- **Feature Gating**: Backend enforces limits; frontend shows upgrade prompts
 
 ## User Preferences
 
@@ -50,6 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express 5
 - **Language**: TypeScript with ES modules
 - **API Pattern**: RESTful JSON API under `/api` prefix
+- **Authentication**: Replit OIDC Auth
 - **Development**: Vite middleware for HMR in development, static file serving in production
 
 ### Data Layer
@@ -108,3 +91,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Date Handling
 - **date-fns**: Date formatting and manipulation
+
+## Recent Changes
+
+- 2026-02-24: Removed in-app purchases (Stripe subscription system). All features are now free and unlimited.

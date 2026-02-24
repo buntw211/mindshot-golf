@@ -13,7 +13,6 @@ import {
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
 
-// Backwards compatibility type aliases
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -25,9 +24,6 @@ export interface IStorage {
   getPatterns(userId?: string): Promise<PatternSummary[]>;
   getDashboardStats(userId?: string): Promise<DashboardStats>;
   getUser(id: string): Promise<User | undefined>;
-  updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string; subscriptionStatus?: string }): Promise<User | undefined>;
-  incrementJournalCount(userId: string): Promise<number>;
-  getUserJournalCount(userId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -69,31 +65,6 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
-  }
-
-  async updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string; subscriptionStatus?: string }): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set({ ...stripeInfo, updatedAt: new Date() })
-      .where(eq(users.id, userId))
-      .returning();
-    return user || undefined;
-  }
-
-  async incrementJournalCount(userId: string): Promise<number> {
-    const user = await this.getUser(userId);
-    const currentCount = parseInt(user?.journalCount || "0", 10);
-    const newCount = currentCount + 1;
-    await db
-      .update(users)
-      .set({ journalCount: String(newCount), updatedAt: new Date() })
-      .where(eq(users.id, userId));
-    return newCount;
-  }
-
-  async getUserJournalCount(userId: string): Promise<number> {
-    const user = await this.getUser(userId);
-    return parseInt(user?.journalCount || "0", 10);
   }
 
   private analyzeSessionContent(session: JournalEntry): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {
