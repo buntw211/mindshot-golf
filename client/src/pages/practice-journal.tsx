@@ -285,7 +285,7 @@ export default function PracticeJournal() {
           onSubmit={form.handleSubmit(onSubmit)} 
           className="space-y-6"
           onKeyDown={(e) => {
-            if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+            if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
               e.preventDefault();
             }
           }}
