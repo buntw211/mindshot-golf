@@ -74,7 +74,11 @@ async function initStripe() {
 }
 
 (async () => {
-  await initStripe();
+  try {
+    await initStripe();
+  } catch (error) {
+    console.warn('Stripe initialization skipped - connection not configured yet');
+  }
 
   app.post(
     '/api/stripe/webhook',
