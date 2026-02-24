@@ -269,8 +269,8 @@ export default function PlayJournal() {
     mutation.mutate(data);
   };
 
-  // Add +1 for the final "Review & Submit" step
-  const totalSteps = journalMode === "freewriting" ? 4 : guidedQuestions.length + 3;
+  // Steps: mode select + details + content steps + self-assessment + review & submit
+  const totalSteps = journalMode === "freewriting" ? 5 : guidedQuestions.length + 3;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -528,6 +528,46 @@ export default function PlayJournal() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+          )}
+
+          {journalMode === "freewriting" && step === 3 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Self-Assessment</CardTitle>
+                <CardDescription>Rate how you felt in each mental category to compare with your journal analysis</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {thoughtCategories.map((category) => (
+                  <div key={category} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">
+                        {categoryLabels[category].label}
+                      </Label>
+                      <span className="text-sm text-muted-foreground">
+                        {(selfRatings as SelfRatings)[category] || 5}/10
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground w-20 text-right">
+                        {categoryLabels[category].lowLabel}
+                      </span>
+                      <Slider
+                        min={1}
+                        max={10}
+                        step={1}
+                        value={[(selfRatings as SelfRatings)[category] || 5]}
+                        onValueChange={([v]) => updateSelfRating(category, v)}
+                        className="flex-1"
+                        data-testid={`slider-freewrite-self-${category}`}
+                      />
+                      <span className="text-xs text-muted-foreground w-20">
+                        {categoryLabels[category].highLabel}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}
