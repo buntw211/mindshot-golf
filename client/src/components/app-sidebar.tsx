@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
-  Flag,
   Target,
   BookOpen,
   Lightbulb,
@@ -27,13 +26,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import mindshotLogo from "@assets/mindshot_logo.png";
 
 const journalItems = [
   {
     title: "New Round",
     url: "/play",
-    icon: Flag,
+    icon: GolfFlagIcon,
     description: "Log your round",
   },
   {

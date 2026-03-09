@@ -10,7 +10,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Flag,
   Target,
   Lightbulb,
   ArrowRight,
@@ -19,6 +18,7 @@ import {
   Sliders,
   BarChart3,
 } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import type { PatternSummary, ThoughtCategory, RatingDataPoint } from "@shared/schema";
 import { format, subDays } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -434,7 +434,7 @@ export default function Patterns() {
             <div className="flex gap-2 justify-center flex-wrap">
               <Link href="/play">
                 <Button size="sm" data-testid="button-log-round">
-                  <Flag className="w-3.5 h-3.5 mr-1.5" />
+                  <GolfFlagIcon className="w-3.5 h-3.5" />
                   Log a Round
                 </Button>
               </Link>

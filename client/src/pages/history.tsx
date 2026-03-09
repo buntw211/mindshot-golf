@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Flag,
   Target,
   Calendar,
   Smile,
@@ -14,6 +13,7 @@ import {
   BookOpen,
   ChevronRight,
 } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import type { Session } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -29,7 +29,7 @@ function SessionCard({ session }: { session: Session }) {
               <div className={`w-12 h-12 rounded-md flex items-center justify-center ${
                 isPlay ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"
               }`}>
-                {isPlay ? <Flag className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                {isPlay ? <GolfFlagIcon className="w-6 h-6" /> : <Target className="w-6 h-6" />}
               </div>
               <div>
                 <div className="font-medium text-lg">
@@ -138,7 +138,7 @@ export default function History() {
             <div className="flex gap-3 justify-center flex-wrap">
               <Link href="/play">
                 <Button data-testid="button-new-round">
-                  <Flag className="w-4 h-4 mr-2" />
+                  <GolfFlagIcon className="w-4 h-4" />
                   Log a Round
                 </Button>
               </Link>

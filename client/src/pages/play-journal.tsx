@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Flag, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar, Camera, X, Image } from "lucide-react";
+import { Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, BookOpen, PenLine, CheckCircle, MapPin, Target, Calendar, Camera, X, Image } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 
 const playFormSchema = insertSessionSchema.extend({
@@ -286,7 +287,7 @@ export default function PlayJournal() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Flag className="w-6 h-6 text-primary" />
+          <GolfFlagIcon className="w-6 h-6" />
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-bold" data-testid="text-play-title">Post-Round Journal</h1>

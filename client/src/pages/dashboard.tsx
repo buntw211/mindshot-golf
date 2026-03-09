@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Flag,
   Target,
   TrendingUp,
   TrendingDown,
@@ -16,6 +15,7 @@ import {
   BarChart3,
   Crown,
 } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import type { DashboardStats, Session } from "@shared/schema";
 import { format } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -69,7 +69,7 @@ function SessionCard({ session }: { session: Session }) {
               <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
                 isPlay ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"
               }`}>
-                {isPlay ? <Flag className="w-5 h-5" /> : <Target className="w-5 h-5" />}
+                {isPlay ? <GolfFlagIcon className="w-5 h-5" /> : <Target className="w-5 h-5" />}
               </div>
               <div>
                 <div className="font-medium">
@@ -196,7 +196,7 @@ export default function Dashboard() {
         <div className="flex gap-2 flex-wrap">
           <Link href="/play">
             <Button data-testid="button-new-round">
-              <Flag className="w-4 h-4 mr-2" />
+              <GolfFlagIcon className="w-4 h-4" />
               New Round
             </Button>
           </Link>
@@ -253,7 +253,7 @@ export default function Dashboard() {
             <div className="flex gap-3 justify-center flex-wrap">
               <Link href="/play">
                 <Button size="lg" data-testid="button-start-round">
-                  <Flag className="w-4 h-4 mr-2" />
+                  <GolfFlagIcon className="w-4 h-4" />
                   Log Your First Round
                 </Button>
               </Link>
@@ -278,7 +278,7 @@ export default function Dashboard() {
             <StatCard
               title="Play Rounds"
               value={stats.playSessions}
-              icon={Flag}
+              icon={GolfFlagIcon}
             />
             <StatCard
               title="Practice Sessions"

@@ -21,7 +21,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Flag,
   Target,
   Calendar,
   Smile,
@@ -37,6 +36,7 @@ import {
   X,
   Image,
 } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import type { Session, SelfRatings } from "@shared/schema";
 import { thoughtCategories, type ThoughtCategory } from "@shared/schema";
 import { format } from "date-fns";
@@ -449,7 +449,7 @@ export default function SessionDetail() {
               <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${
                 isPlay ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"
               }`}>
-                {isPlay ? <Flag className="w-7 h-7" /> : <Target className="w-7 h-7" />}
+                {isPlay ? <GolfFlagIcon className="w-7 h-7" /> : <Target className="w-7 h-7" />}
               </div>
               <div>
                 {editing ? (

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lightbulb, Sparkles, Flag, Target, Search, MessageCircle, HelpCircle } from "lucide-react";
+import { Lightbulb, Sparkles, Target, Search, MessageCircle, HelpCircle } from "lucide-react";
+import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import { thoughtCategories, type ThoughtCategory } from "@shared/schema";
 
 interface QAItem {
@@ -569,7 +570,7 @@ export default function Tips() {
         <Tabs defaultValue="play" className="space-y-4">
           <TabsList>
             <TabsTrigger value="play" data-testid="tab-play-tips">
-              <Flag className="w-4 h-4 mr-2" />
+              <GolfFlagIcon className="w-4 h-4" />
               During Rounds
             </TabsTrigger>
             <TabsTrigger value="practice" data-testid="tab-practice-tips">
