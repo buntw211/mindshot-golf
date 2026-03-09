@@ -110,19 +110,20 @@ function SessionCard({ session }: { session: Session }) {
 
 function PatternCard({
   category,
-  count,
-  positiveCount,
-  negativeCount,
+  averageRating,
+  sessionCount,
   trend,
 }: {
   category: string;
-  count: number;
-  positiveCount: number;
-  negativeCount: number;
+  averageRating: number;
+  sessionCount: number;
   trend: "improving" | "stable" | "declining";
 }) {
   const TrendIcon = trend === "improving" ? TrendingUp : trend === "declining" ? TrendingDown : Minus;
   const trendColor = trend === "improving" ? "text-green-600" : trend === "declining" ? "text-red-500" : "text-muted-foreground";
+  const ratingColor = averageRating >= 7 ? "text-green-600" : averageRating >= 4 ? "text-amber-600" : "text-red-600";
+  const barPct = (averageRating / 10) * 100;
+  const barColor = averageRating >= 7 ? "bg-green-500" : averageRating >= 4 ? "bg-amber-500" : "bg-red-500";
   
   return (
     <Card>
@@ -131,15 +132,14 @@ function PatternCard({
           <span className="font-medium capitalize">{category.replace("-", " ")}</span>
           <TrendIcon className={`w-4 h-4 ${trendColor}`} />
         </div>
-        <div className="text-2xl font-bold mb-2">{count}</div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-            +{positiveCount}
-          </Badge>
-          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">
-            -{negativeCount}
-          </Badge>
+        <div className="flex items-baseline gap-1 mb-2">
+          <span className={`text-2xl font-bold ${ratingColor}`}>{averageRating.toFixed(1)}</span>
+          <span className="text-sm text-muted-foreground">/ 10</span>
         </div>
+        <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden mb-1">
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
+        </div>
+        <p className="text-xs text-muted-foreground">{sessionCount} {sessionCount === 1 ? "session" : "sessions"}</p>
       </CardContent>
     </Card>
   );
@@ -296,7 +296,7 @@ export default function Dashboard() {
           {stats.topPatterns && stats.topPatterns.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Top Thought Patterns</h2>
+                <h2 className="text-lg font-semibold">Mental Game Ratings</h2>
                 <Link href="/patterns">
                   <Button variant="ghost" size="sm" data-testid="link-view-all-patterns">
                     View All

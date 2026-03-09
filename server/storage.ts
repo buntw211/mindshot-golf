@@ -3,10 +3,12 @@ import {
   type JournalEntry, 
   type InsertJournalEntry,
   type PatternSummary,
+  type RatingDataPoint,
   type DashboardStats,
   type MoodFocusTrend,
   type ThoughtCategory,
   thoughtCategories,
+  type SelfRatings,
   users,
   type User
 } from "@shared/schema";
@@ -147,45 +149,55 @@ export class DatabaseStorage implements IStorage {
   async getPatterns(userId?: string): Promise<PatternSummary[]> {
     const allSessions = await this.getSessions(userId);
     
-    const aggregated = new Map<ThoughtCategory, { positive: number; negative: number; neutral: number }>();
+    const categoryData = new Map<ThoughtCategory, RatingDataPoint[]>();
     for (const category of thoughtCategories) {
-      aggregated.set(category, { positive: 0, negative: 0, neutral: 0 });
+      categoryData.set(category, []);
     }
 
     for (const session of allSessions) {
-      const sessionPatterns = this.analyzeSessionContent(session);
-      for (const [category, counts] of sessionPatterns) {
-        const agg = aggregated.get(category)!;
-        agg.positive += counts.positive;
-        agg.negative += counts.negative;
-        agg.neutral += counts.neutral;
+      const ratings = session.selfRatings as SelfRatings | null;
+      if (!ratings) continue;
+
+      for (const category of thoughtCategories) {
+        const rating = ratings[category];
+        if (rating !== undefined && rating !== null) {
+          categoryData.get(category)!.push({
+            date: session.date,
+            rating,
+            sessionType: session.type as "play" | "practice",
+          });
+        }
       }
     }
 
     const patterns: PatternSummary[] = [];
-    for (const [category, counts] of aggregated) {
-      const total = counts.positive + counts.negative + counts.neutral;
-      if (total > 0) {
-        const positiveRatio = counts.positive / total;
-        let trend: "improving" | "stable" | "declining" = "stable";
-        if (positiveRatio > 0.6) {
-          trend = "improving";
-        } else if (positiveRatio < 0.4) {
-          trend = "declining";
-        }
-        
-        patterns.push({
-          category,
-          count: total,
-          positiveCount: counts.positive,
-          negativeCount: counts.negative,
-          neutralCount: counts.neutral,
-          trend
-        });
+    for (const [category, dataPoints] of categoryData) {
+      if (dataPoints.length === 0) continue;
+
+      const sorted = [...dataPoints].sort((a, b) => a.date.localeCompare(b.date));
+      const sum = sorted.reduce((s, dp) => s + dp.rating, 0);
+      const averageRating = Math.round((sum / sorted.length) * 10) / 10;
+
+      let trend: "improving" | "stable" | "declining" = "stable";
+      if (sorted.length >= 2) {
+        const mid = Math.floor(sorted.length / 2);
+        const olderAvg = sorted.slice(0, mid).reduce((s, dp) => s + dp.rating, 0) / mid;
+        const recentAvg = sorted.slice(mid).reduce((s, dp) => s + dp.rating, 0) / (sorted.length - mid);
+        const diff = recentAvg - olderAvg;
+        if (diff >= 0.5) trend = "improving";
+        else if (diff <= -0.5) trend = "declining";
       }
+
+      patterns.push({
+        category,
+        averageRating,
+        sessionCount: sorted.length,
+        ratingHistory: sorted,
+        trend,
+      });
     }
 
-    return patterns.sort((a, b) => b.count - a.count);
+    return patterns.sort((a, b) => b.sessionCount - a.sessionCount);
   }
 
   async getDashboardStats(userId?: string): Promise<DashboardStats> {
@@ -222,7 +234,12 @@ export class DatabaseStorage implements IStorage {
       practiceSessions: practiceSessions.length,
       avgMood,
       avgFocus,
-      topPatterns: patterns.slice(0, 5),
+      topPatterns: [...patterns].sort((a, b) => {
+        const trendOrder = { declining: 0, stable: 1, improving: 2 };
+        const trendDiff = trendOrder[a.trend] - trendOrder[b.trend];
+        if (trendDiff !== 0) return trendDiff;
+        return a.averageRating - b.averageRating;
+      }).slice(0, 5),
       recentSessions: allSessions.slice(0, 5),
       moodFocusTrends
     };

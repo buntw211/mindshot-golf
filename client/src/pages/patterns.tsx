@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   TrendingUp,
   TrendingDown,
@@ -14,11 +13,11 @@ import {
   Lightbulb,
   ArrowRight,
   HelpCircle,
-  BookOpen,
-  BarChart3,
   Sliders,
+  BarChart3,
 } from "lucide-react";
-import type { PatternSummary, ThoughtCategory } from "@shared/schema";
+import type { PatternSummary, ThoughtCategory, RatingDataPoint } from "@shared/schema";
+import { format } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
 
 const categoryDescriptions: Record<ThoughtCategory, string> = {
@@ -47,6 +46,66 @@ const categoryTips: Record<ThoughtCategory, string> = {
   "acceptance": "What happened has already happened. Your only job now is the next shot.",
 };
 
+function RatingBar({ rating }: { rating: number }) {
+  const percentage = (rating / 10) * 100;
+  const color = rating >= 7 ? "bg-green-500" : rating >= 4 ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+      <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${percentage}%` }} />
+    </div>
+  );
+}
+
+function RatingHistory({ history }: { history: RatingDataPoint[] }) {
+  const maxVisible = 12;
+  const visible = history.slice(-maxVisible);
+  const barWidth = Math.max(100 / maxVisible, 100 / visible.length);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-end gap-[3px] h-16">
+        {visible.map((dp, i) => {
+          const heightPct = (dp.rating / 10) * 100;
+          const color = dp.rating >= 7
+            ? "bg-green-500 dark:bg-green-400"
+            : dp.rating >= 4
+            ? "bg-amber-500 dark:bg-amber-400"
+            : "bg-red-500 dark:bg-red-400";
+          return (
+            <div
+              key={`${dp.date}-${i}`}
+              className="group relative flex-1 flex flex-col justify-end"
+              style={{ maxWidth: `${barWidth}%` }}
+            >
+              <div
+                className={`rounded-sm ${color} min-w-[6px] transition-all hover:opacity-80`}
+                style={{ height: `${heightPct}%` }}
+              />
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10">
+                <div className="bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-md whitespace-nowrap border">
+                  <div className="font-medium">{dp.rating}/10</div>
+                  <div className="text-muted-foreground">{format(new Date(dp.date), "MMM d")}</div>
+                  <div className="text-muted-foreground capitalize">{dp.sessionType}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        {visible.length > 0 && (
+          <>
+            <span>{format(new Date(visible[0].date), "MMM d")}</span>
+            {visible.length > 1 && (
+              <span>{format(new Date(visible[visible.length - 1].date), "MMM d")}</span>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PatternCard({ pattern }: { pattern: PatternSummary }) {
   const TrendIcon = pattern.trend === "improving" ? TrendingUp : pattern.trend === "declining" ? TrendingDown : Minus;
   const trendColor = pattern.trend === "improving" 
@@ -55,8 +114,7 @@ function PatternCard({ pattern }: { pattern: PatternSummary }) {
     ? "text-red-500 dark:text-red-400" 
     : "text-muted-foreground";
   const trendLabel = pattern.trend === "improving" ? "Improving" : pattern.trend === "declining" ? "Needs attention" : "Stable";
-  
-  const positivePercentage = pattern.count > 0 ? (pattern.positiveCount / pattern.count) * 100 : 0;
+  const ratingColor = pattern.averageRating >= 7 ? "text-green-600 dark:text-green-400" : pattern.averageRating >= 4 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400";
   
   return (
     <Card className="hover-elevate" data-testid={`card-pattern-${pattern.category}`}>
@@ -75,32 +133,24 @@ function PatternCard({ pattern }: { pattern: PatternSummary }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Thought balance</span>
-            <span>{Math.round(positivePercentage)}% positive</span>
-          </div>
-          <Progress value={positivePercentage} className="h-2" />
+        <div className="flex items-baseline gap-2">
+          <span className={`text-3xl font-bold ${ratingColor}`} data-testid={`text-rating-${pattern.category}`}>
+            {pattern.averageRating.toFixed(1)}
+          </span>
+          <span className="text-muted-foreground text-sm">/ 10 avg</span>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {pattern.sessionCount} {pattern.sessionCount === 1 ? "session" : "sessions"}
+          </span>
         </div>
-        
-        <div className="flex gap-3">
-          <div className="flex-1 p-3 rounded-md bg-green-50 dark:bg-green-900/20 text-center">
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-              {pattern.positiveCount}
-            </div>
-            <div className="text-xs text-green-600 dark:text-green-500">Positive</div>
+
+        <RatingBar rating={pattern.averageRating} />
+
+        {pattern.ratingHistory.length > 1 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Rating over time</p>
+            <RatingHistory history={pattern.ratingHistory} />
           </div>
-          <div className="flex-1 p-3 rounded-md bg-muted text-center">
-            <div className="text-2xl font-bold">{pattern.neutralCount}</div>
-            <div className="text-xs text-muted-foreground">Neutral</div>
-          </div>
-          <div className="flex-1 p-3 rounded-md bg-red-50 dark:bg-red-900/20 text-center">
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400">
-              {pattern.negativeCount}
-            </div>
-            <div className="text-xs text-red-600 dark:text-red-500">Negative</div>
-          </div>
-        </div>
+        )}
 
         <div className="p-3 bg-accent/50 rounded-md">
           <div className="flex items-start gap-2">
@@ -145,8 +195,8 @@ export default function Patterns() {
   }
 
   const hasPatterns = patterns && patterns.length > 0;
-  const improvingPatterns = patterns?.filter(p => p.trend === "improving") || [];
-  const decliningPatterns = patterns?.filter(p => p.trend === "declining") || [];
+  const strongAreas = patterns?.filter(p => p.averageRating >= 7) || [];
+  const needsAttention = patterns?.filter(p => p.averageRating < 5) || [];
 
   return (
     <div className="p-6 space-y-6">
@@ -158,7 +208,7 @@ export default function Patterns() {
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-patterns-title">Thought Patterns</h1>
             <p className="text-muted-foreground">
-              Recognize and understand your mental tendencies
+              Track your mental game ratings over time
             </p>
           </div>
         </div>
@@ -181,12 +231,12 @@ export default function Patterns() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-primary" />
+                <Sliders className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium text-sm mb-1">Journal Analysis</h4>
+                <h4 className="font-medium text-sm mb-1">Self-Assessment Ratings</h4>
                 <p className="text-xs text-muted-foreground">
-                  We analyze the words and phrases in your journal entries to detect patterns in how you think about your game.
+                  After each session, you rate yourself 1-10 across 10 mental game categories. These ratings form the basis of your pattern tracking.
                 </p>
               </div>
             </div>
@@ -195,29 +245,27 @@ export default function Patterns() {
                 <BarChart3 className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium text-sm mb-1">Pattern Detection</h4>
+                <h4 className="font-medium text-sm mb-1">Average Over Time</h4>
                 <p className="text-xs text-muted-foreground">
-                  Your writing reveals mental tendencies you may not notice. We track positive, neutral, and negative thoughts across 10 categories.
+                  We calculate your average rating for each category and track how it changes across sessions so you can see trends.
                 </p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Sliders className="w-5 h-5 text-primary" />
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium text-sm mb-1">Self-Assessment Comparison</h4>
+                <h4 className="font-medium text-sm mb-1">Trend Detection</h4>
                 <p className="text-xs text-muted-foreground">
-                  Compare the self-ratings you give in journals against what your writing reveals. Gaps between them highlight blind spots.
+                  By comparing recent sessions to older ones, we identify which areas are improving and which need more attention.
                 </p>
               </div>
             </div>
           </div>
           <div className="p-3 bg-card rounded-md border">
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Why this matters:</span> Often we feel differently about our mental game than what actually shows up in our thoughts. 
-              For example, you might rate your patience as "8/10" but your journal entries reveal frequent frustration. 
-              This comparison helps build self-awareness and guides where to focus your mental game work.
+              <span className="font-medium text-foreground">Why this matters:</span> Tracking your mental game with consistent 1-10 ratings reveals patterns you might not notice in the moment. Over time, you'll see which areas are growing and where to focus your mental training.
             </p>
           </div>
         </CardContent>
@@ -320,8 +368,8 @@ export default function Patterns() {
             </div>
             <h2 className="text-xl font-semibold mb-2">No Patterns Yet</h2>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Start journaling your rounds and practice sessions to identify 
-              recurring thought patterns in your mental game.
+              Start journaling your rounds and practice sessions with self-assessment ratings
+              to track your mental game patterns over time.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link href="/play">
@@ -341,36 +389,36 @@ export default function Patterns() {
         </Card>
       ) : (
         <>
-          {(improvingPatterns.length > 0 || decliningPatterns.length > 0) && (
+          {(strongAreas.length > 0 || needsAttention.length > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {improvingPatterns.length > 0 && (
+              {strongAreas.length > 0 && (
                 <Card className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
                       <TrendingUp className="w-5 h-5" />
-                      <span className="font-semibold">Improving Areas</span>
+                      <span className="font-semibold">Strong Areas (7+)</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {improvingPatterns.map(p => (
+                      {strongAreas.map(p => (
                         <Badge key={p.category} variant="outline" className="capitalize bg-white dark:bg-card">
-                          {p.category.replace("-", " ")}
+                          {p.category.replace("-", " ")} — {p.averageRating.toFixed(1)}
                         </Badge>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
-              {decliningPatterns.length > 0 && (
+              {needsAttention.length > 0 && (
                 <Card className="bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 text-red-700 dark:text-red-400 mb-2">
                       <TrendingDown className="w-5 h-5" />
-                      <span className="font-semibold">Needs Attention</span>
+                      <span className="font-semibold">Needs Attention (below 5)</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {decliningPatterns.map(p => (
+                      {needsAttention.map(p => (
                         <Badge key={p.category} variant="outline" className="capitalize bg-white dark:bg-card">
-                          {p.category.replace("-", " ")}
+                          {p.category.replace("-", " ")} — {p.averageRating.toFixed(1)}
                         </Badge>
                       ))}
                     </div>
@@ -385,7 +433,7 @@ export default function Patterns() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {patterns
-              .sort((a, b) => b.count - a.count)
+              .sort((a, b) => b.sessionCount - a.sessionCount)
               .map((pattern) => (
                 <PatternCard key={pattern.category} pattern={pattern} />
               ))}

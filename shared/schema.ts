@@ -92,12 +92,17 @@ export const insertSessionSchema = insertJournalEntrySchema;
 export type InsertSession = InsertJournalEntry;
 export type Session = JournalEntry;
 
+export interface RatingDataPoint {
+  date: string;
+  rating: number;
+  sessionType: SessionType;
+}
+
 export interface PatternSummary {
   category: ThoughtCategory;
-  count: number;
-  positiveCount: number;
-  negativeCount: number;
-  neutralCount: number;
+  averageRating: number;
+  sessionCount: number;
+  ratingHistory: RatingDataPoint[];
   trend: "improving" | "stable" | "declining";
 }
 
