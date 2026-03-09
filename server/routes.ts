@@ -262,7 +262,7 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 800,
+        max_completion_tokens: 800,
         temperature: 0.7,
       });
 
