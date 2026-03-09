@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Target, Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Camera, X, Image } from "lucide-react";
+import { Lightbulb, ChevronRight, ChevronLeft, Save, Sparkles, Camera, X, Image } from "lucide-react";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import { insertSessionSchema, thoughtCategories, selfRatingsSchema, type ThoughtCategory, type SelfRatings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 
@@ -271,7 +272,7 @@ export default function PracticeJournal() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-          <Target className="w-6 h-6 text-secondary-foreground" />
+          <DrivingRangeIcon className="w-6 h-6" />
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-bold" data-testid="text-practice-title">Practice Session Journal</h1>

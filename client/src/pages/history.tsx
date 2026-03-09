@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Target,
   Calendar,
   Smile,
   Focus,
@@ -14,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import type { Session } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -29,7 +29,7 @@ function SessionCard({ session }: { session: Session }) {
               <div className={`w-12 h-12 rounded-md flex items-center justify-center ${
                 isPlay ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"
               }`}>
-                {isPlay ? <GolfFlagIcon className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                {isPlay ? <GolfFlagIcon className="w-6 h-6" /> : <DrivingRangeIcon className="w-6 h-6" />}
               </div>
               <div>
                 <div className="font-medium text-lg">
@@ -144,7 +144,7 @@ export default function History() {
               </Link>
               <Link href="/practice">
                 <Button variant="outline" data-testid="button-new-practice">
-                  <Target className="w-4 h-4 mr-2" />
+                  <DrivingRangeIcon className="w-4 h-4" />
                   Log Practice
                 </Button>
               </Link>

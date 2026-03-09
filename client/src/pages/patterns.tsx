@@ -10,7 +10,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Target,
   Lightbulb,
   ArrowRight,
   ChevronDown,
@@ -19,6 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import type { PatternSummary, ThoughtCategory, RatingDataPoint } from "@shared/schema";
 import { format, subDays } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -440,7 +440,7 @@ export default function Patterns() {
               </Link>
               <Link href="/practice">
                 <Button variant="outline" size="sm" data-testid="button-log-practice">
-                  <Target className="w-3.5 h-3.5 mr-1.5" />
+                  <DrivingRangeIcon className="w-3.5 h-3.5" />
                   Log Practice
                 </Button>
               </Link>

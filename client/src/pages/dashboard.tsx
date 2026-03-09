@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Target,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -16,6 +15,7 @@ import {
   Crown,
 } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import type { DashboardStats, Session } from "@shared/schema";
 import { format } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -69,7 +69,7 @@ function SessionCard({ session }: { session: Session }) {
               <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
                 isPlay ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"
               }`}>
-                {isPlay ? <GolfFlagIcon className="w-5 h-5" /> : <Target className="w-5 h-5" />}
+                {isPlay ? <GolfFlagIcon className="w-5 h-5" /> : <DrivingRangeIcon className="w-5 h-5" />}
               </div>
               <div>
                 <div className="font-medium">
@@ -202,7 +202,7 @@ export default function Dashboard() {
           </Link>
           <Link href="/practice">
             <Button variant="outline" data-testid="button-new-practice">
-              <Target className="w-4 h-4 mr-2" />
+              <DrivingRangeIcon className="w-4 h-4" />
               New Practice
             </Button>
           </Link>
@@ -259,7 +259,7 @@ export default function Dashboard() {
               </Link>
               <Link href="/practice">
                 <Button size="lg" variant="outline" data-testid="button-start-practice">
-                  <Target className="w-4 h-4 mr-2" />
+                  <DrivingRangeIcon className="w-4 h-4" />
                   Log Practice Session
                 </Button>
               </Link>
@@ -283,7 +283,7 @@ export default function Dashboard() {
             <StatCard
               title="Practice Sessions"
               value={stats.practiceSessions}
-              icon={Target}
+              icon={DrivingRangeIcon}
             />
             <StatCard
               title="Avg. Focus"

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
-  Target,
   BookOpen,
   Lightbulb,
   TrendingUp,
@@ -27,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import mindshotLogo from "@assets/mindshot_logo.png";
 
 const journalItems = [
@@ -39,7 +39,7 @@ const journalItems = [
   {
     title: "New Practice",
     url: "/practice",
-    icon: Target,
+    icon: DrivingRangeIcon,
     description: "Log practice session",
   },
 ];

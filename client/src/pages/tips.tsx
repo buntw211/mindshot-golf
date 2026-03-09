@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lightbulb, Sparkles, Target, Search, MessageCircle, HelpCircle } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
+import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import { thoughtCategories, type ThoughtCategory } from "@shared/schema";
 
 interface QAItem {
@@ -574,7 +575,7 @@ export default function Tips() {
               During Rounds
             </TabsTrigger>
             <TabsTrigger value="practice" data-testid="tab-practice-tips">
-              <Target className="w-4 h-4 mr-2" />
+              <DrivingRangeIcon className="w-4 h-4" />
               During Practice
             </TabsTrigger>
           </TabsList>
