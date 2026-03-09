@@ -257,7 +257,7 @@ ${ratingsText ? `Self-Assessment Ratings: ${ratingsText}` : ""}
 ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes provided)"}`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -265,7 +265,9 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
         max_completion_tokens: 800,
       });
 
-      const insights = response.choices[0]?.message?.content || "Unable to generate insights at this time.";
+      const choice = response.choices[0]?.message;
+      console.log("AI insights response:", JSON.stringify({ content: choice?.content?.substring(0, 100), refusal: choice?.refusal, finishReason: response.choices[0]?.finish_reason }));
+      const insights = choice?.content || choice?.refusal || "Unable to generate insights at this time.";
 
       await storage.updateSession(sessionId, { aiInsights: insights });
 
