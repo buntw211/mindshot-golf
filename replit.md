@@ -12,6 +12,7 @@ Key features:
 - Mental game tips and cognitive reframing suggestions
 - Self-assessment ratings with comparison to journal analysis
 - Scorecard photo upload for future reference
+- AI-powered insights: personalized mental game feedback on each journal entry using OpenAI (via Replit AI Integrations)
 
 ## User Preferences
 

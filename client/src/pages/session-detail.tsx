@@ -34,6 +34,9 @@ import {
   Save,
   X,
   Image,
+  Sparkles,
+  RefreshCw,
+  Brain,
 } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import { DrivingRangeIcon } from "@/components/driving-range-icon";
@@ -162,6 +165,135 @@ function SelfRatingsSection({ ratings, editing, onRatingChange }: {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AiInsightsSection({ session }: { session: Session }) {
+  const { toast } = useToast();
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/sessions/${session.id}/insights`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", session.id] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate AI insights. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const hasInsights = !!session.aiInsights;
+
+  const renderMarkdown = (text: string) => {
+    const lines = text.split("\n");
+    const elements: JSX.Element[] = [];
+    let listItems: string[] = [];
+
+    const flushList = () => {
+      if (listItems.length > 0) {
+        elements.push(
+          <ul key={`list-${elements.length}`} className="space-y-1.5 ml-1">
+            {listItems.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="text-primary mt-1.5 shrink-0">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+        listItems = [];
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) {
+        flushList();
+        continue;
+      }
+      if (line.startsWith("## ")) {
+        flushList();
+        elements.push(
+          <h4 key={`h-${i}`} className="font-semibold text-sm flex items-center gap-2 mt-3 first:mt-0">
+            <Brain className="w-3.5 h-3.5 text-primary shrink-0" />
+            {line.replace("## ", "")}
+          </h4>
+        );
+      } else if (line.startsWith("- ") || line.startsWith("* ")) {
+        listItems.push(line.replace(/^[-*]\s+/, ""));
+      } else if (line.match(/^\d+\.\s/)) {
+        listItems.push(line.replace(/^\d+\.\s+/, ""));
+      } else {
+        flushList();
+        elements.push(
+          <p key={`p-${i}`} className="text-sm text-muted-foreground">{line}</p>
+        );
+      }
+    }
+    flushList();
+    return elements;
+  };
+
+  return (
+    <div className="space-y-3" data-testid="section-ai-insights">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          AI-Powered Insights
+        </h3>
+        {hasInsights && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            className="text-xs"
+            data-testid="button-regenerate-insights"
+          >
+            <RefreshCw className={`w-3 h-3 mr-1 ${generateMutation.isPending ? "animate-spin" : ""}`} />
+            Regenerate
+          </Button>
+        )}
+      </div>
+
+      {hasInsights ? (
+        <div className="bg-gradient-to-br from-primary/5 via-accent/30 to-primary/5 rounded-lg border border-primary/10 p-4 space-y-2">
+          {renderMarkdown(session.aiInsights!)}
+        </div>
+      ) : (
+        <div className="border-2 border-dashed rounded-lg p-6 text-center">
+          <Sparkles className="w-8 h-8 text-primary/40 mx-auto mb-2" />
+          <p className="text-sm font-medium mb-1">Get personalized feedback</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            AI will analyze your journal entry and ratings to provide tailored mental game insights.
+          </p>
+          <Button
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            size="sm"
+            data-testid="button-generate-insights"
+          >
+            {generateMutation.isPending ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Generate Insights
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -893,6 +1025,8 @@ export default function SessionDetail() {
               onRatingChange={handleRatingChange}
             />
           )}
+
+          <AiInsightsSection session={session} />
 
           <div className="space-y-3" data-testid="section-scorecard">
             {editing ? (
