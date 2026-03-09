@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import { Skeleton } from "@/components/ui/skeleton";
+import mindshotLogo from "@assets/mindshot_logo.png";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import PlayJournal from "@/pages/play-journal";
@@ -61,10 +61,17 @@ function AuthenticatedApp() {
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="space-y-4 text-center">
-        <Skeleton className="h-12 w-12 rounded-full mx-auto" />
-        <Skeleton className="h-4 w-32 mx-auto" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-accent/20">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden animate-pulse">
+          <img src={mindshotLogo} alt="MindShot" className="w-16 h-16 object-contain" />
+        </div>
+        <span className="text-lg font-semibold text-foreground">MindShot</span>
+        <div className="flex gap-1.5 mt-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
       </div>
     </div>
   );
