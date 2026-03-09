@@ -263,7 +263,6 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
           { role: "user", content: userPrompt },
         ],
         max_completion_tokens: 800,
-        temperature: 0.7,
       });
 
       const insights = response.choices[0]?.message?.content || "Unable to generate insights at this time.";
