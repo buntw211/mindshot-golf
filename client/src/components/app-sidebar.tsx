@@ -18,13 +18,13 @@ import {
   BookOpen,
   Lightbulb,
   TrendingUp,
-  Brain,
   LogOut,
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import mindshotLogo from "@assets/mindshot_logo.png";
 
 const journalItems = [
   {
@@ -81,8 +81,8 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <Link href="/">
           <div className="flex items-center gap-3 hover-elevate rounded-md p-2 -m-2 cursor-pointer" data-testid="link-home">
-            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src={mindshotLogo} alt="MindShot" className="w-8 h-8 object-contain" data-testid="img-sidebar-logo" />
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sidebar-foreground">MindShot</span>

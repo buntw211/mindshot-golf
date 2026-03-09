@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Brain,
   Flag,
   Target,
   Lightbulb,
@@ -20,6 +19,7 @@ import {
   Sliders,
 } from "lucide-react";
 import type { PatternSummary, ThoughtCategory } from "@shared/schema";
+import mindshotLogo from "@assets/mindshot_logo.png";
 
 const categoryDescriptions: Record<ThoughtCategory, string> = {
   "confidence": "Your belief in your ability to execute shots and make decisions",
@@ -152,8 +152,8 @@ export default function Patterns() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Brain className="w-6 h-6 text-primary" />
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+            <img src={mindshotLogo} alt="MindShot" className="w-9 h-9 object-contain" data-testid="img-patterns-logo" />
           </div>
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-patterns-title">Thought Patterns</h1>
@@ -315,8 +315,8 @@ export default function Patterns() {
       {!hasPatterns ? (
         <Card className="p-12">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Brain className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 overflow-hidden">
+              <img src={mindshotLogo} alt="MindShot" className="w-12 h-12 object-contain opacity-50" data-testid="img-patterns-empty-logo" />
             </div>
             <h2 className="text-xl font-semibold mb-2">No Patterns Yet</h2>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">

@@ -7,16 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Flag,
   Target,
-  Brain,
   TrendingUp,
   TrendingDown,
   Minus,
   Calendar,
   Smile,
   Focus,
+  BarChart3,
 } from "lucide-react";
 import type { DashboardStats, Session } from "@shared/schema";
 import { format } from "date-fns";
+import mindshotLogo from "@assets/mindshot_logo.png";
 
 function StatCard({
   title,
@@ -199,8 +200,8 @@ export default function Dashboard() {
       {!hasData ? (
         <Card className="p-12">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Brain className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 overflow-hidden">
+              <img src={mindshotLogo} alt="MindShot" className="w-12 h-12 object-contain" data-testid="img-dashboard-logo" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Start Your Mental Game Journey</h2>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
@@ -229,7 +230,7 @@ export default function Dashboard() {
             <StatCard
               title="Total Sessions"
               value={stats.totalSessions}
-              icon={Brain}
+              icon={BarChart3}
               subtitle={`${stats.playSessions} rounds, ${stats.practiceSessions} practice`}
             />
             <StatCard

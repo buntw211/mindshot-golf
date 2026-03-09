@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
-  Brain, 
   BookOpen, 
   TrendingUp, 
   Target, 
@@ -9,6 +8,7 @@ import {
   LogIn,
   CheckCircle
 } from "lucide-react";
+import mindshotLogo from "@assets/mindshot_logo.png";
 
 export default function Landing() {
   return (
@@ -16,8 +16,8 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Brain className="w-6 h-6 text-primary" />
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src={mindshotLogo} alt="MindShot" className="w-8 h-8 object-contain" data-testid="img-landing-logo" />
             </div>
             <span className="text-xl font-bold">MindShot</span>
           </div>
