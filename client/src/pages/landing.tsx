@@ -59,11 +59,11 @@ export default function Landing() {
           <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Unlimited journal entries
+              4 free journal entries
             </span>
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Free to use
+              No credit card required
             </span>
           </div>
         </section>
@@ -113,33 +113,64 @@ export default function Landing() {
         </section>
 
         <section className="max-w-4xl mx-auto px-4 py-16">
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="py-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">Start Journaling Today</h2>
-              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                Sign up for free and start tracking your mental game right away.
-                All features are included at no cost.
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground max-w-xs mx-auto text-left">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Unlimited journal entries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Self-assessment comparison
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Tips library access
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+          <h2 className="text-2xl font-bold text-center mb-8">Simple Pricing</h2>
+          <p className="text-center text-muted-foreground mb-8">
+            Start with 4 free journal entries. Upgrade when you're ready for unlimited access.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <Card className="hover-elevate">
+              <CardContent className="py-8 text-center space-y-4">
+                <h3 className="font-semibold text-lg">Monthly</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-3xl font-bold">$9.99</span>
+                  <span className="text-muted-foreground">/month</span>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground text-left max-w-xs mx-auto">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    Unlimited journal entries
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    Full pattern analysis
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    Cancel anytime
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            <Card className="border-primary/50 hover-elevate relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full font-medium">
+                  Best Value
+                </span>
+              </div>
+              <CardContent className="py-8 text-center space-y-4">
+                <h3 className="font-semibold text-lg">Yearly</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-3xl font-bold">$89.99</span>
+                  <span className="text-muted-foreground">/year</span>
+                </div>
+                <p className="text-sm text-primary font-medium">Save $30 — just $7.50/month</p>
+                <ul className="space-y-2 text-sm text-muted-foreground text-left max-w-xs mx-auto">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    Unlimited journal entries
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    Full pattern analysis
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    2 months free
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </section>
 
         <footer className="border-t py-8 text-center text-sm text-muted-foreground">

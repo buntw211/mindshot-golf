@@ -94,4 +94,5 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- 2026-03-09: Re-added Stripe subscription system. Freemium model: 4 free journal entries, then $9.99/month or $89.99/year. Subscription tracked via stripeCustomerId, subscriptionStatus, subscriptionTier on users table. Stripe integration connector: conn_stripe_01KKA2Q4HXB7J0T6PE5F576ZK4. Webhook route registered before express.json(). Subscribe page at /subscribe with pricing cards and Stripe checkout. Paywall enforced in POST /api/sessions (403 on limit). Dashboard shows remaining free entries. Sidebar shows Pro badge or remaining count.
 - 2026-02-24: Removed in-app purchases (Stripe subscription system). All features are now free and unlimited.

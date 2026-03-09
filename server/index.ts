@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { runMigrations } from "stripe-replit-sync";
+import { getStripeSync } from "./stripeClient";
+import { WebhookHandlers } from "./webhookHandlers";
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,7 +21,53 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+async function initStripe() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error('DATABASE_URL required for Stripe');
+
+  log('Initializing Stripe schema...', 'stripe');
+  await runMigrations({ databaseUrl, schema: 'stripe' });
+  log('Stripe schema ready', 'stripe');
+
+  const stripeSync = await getStripeSync();
+
+  log('Setting up managed webhook...', 'stripe');
+  const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+  const webhookResult = await stripeSync.findOrCreateManagedWebhook(
+    `${webhookBaseUrl}/api/stripe/webhook`
+  );
+  log(`Webhook configured: ${webhookResult?.webhook?.url || 'ready'}`, 'stripe');
+
+  stripeSync.syncBackfill()
+    .then(() => log('Stripe data synced', 'stripe'))
+    .catch((err: any) => console.error('Error syncing Stripe data:', err));
+}
+
 (async () => {
+  await initStripe();
+
+  app.post(
+    '/api/stripe/webhook',
+    express.raw({ type: 'application/json' }),
+    async (req, res) => {
+      const signature = req.headers['stripe-signature'];
+      if (!signature) return res.status(400).json({ error: 'Missing stripe-signature' });
+
+      try {
+        const sig = Array.isArray(signature) ? signature[0] : signature;
+        if (!Buffer.isBuffer(req.body)) {
+          console.error('STRIPE WEBHOOK ERROR: req.body is not a Buffer');
+          return res.status(500).json({ error: 'Webhook processing error' });
+        }
+        await WebhookHandlers.processWebhook(req.body as Buffer, sig);
+        res.status(200).json({ received: true });
+      } catch (error: any) {
+        console.error('Webhook error:', error.message);
+        res.status(400).json({ error: 'Webhook processing error' });
+      }
+    }
+  );
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 

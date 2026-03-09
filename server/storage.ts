@@ -24,6 +24,8 @@ export interface IStorage {
   getPatterns(userId?: string): Promise<PatternSummary[]>;
   getDashboardStats(userId?: string): Promise<DashboardStats>;
   getUser(id: string): Promise<User | undefined>;
+  getSessionCount(userId: string): Promise<number>;
+  updateUserSubscription(userId: string, data: { stripeCustomerId?: string; subscriptionStatus?: string; subscriptionTier?: string | null }): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -65,6 +67,21 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
+  }
+
+  async getSessionCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(journalEntries)
+      .where(eq(journalEntries.userId, userId));
+    return Number(result[0]?.count || 0);
+  }
+
+  async updateUserSubscription(userId: string, data: {
+    stripeCustomerId?: string;
+    subscriptionStatus?: string;
+    subscriptionTier?: string | null;
+  }): Promise<void> {
+    await db.update(users).set(data).where(eq(users.id, userId));
   }
 
   private analyzeSessionContent(session: JournalEntry): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {

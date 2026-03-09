@@ -226,7 +226,17 @@ export default function PlayJournal() {
       });
       navigate("/history");
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMsg = error?.message || "";
+      if (errorMsg.includes("403") || errorMsg.includes("limit")) {
+        toast({
+          title: "Free Entry Limit Reached",
+          description: "You've used all 4 free journal entries. Subscribe to continue.",
+          variant: "destructive",
+        });
+        navigate("/subscribe");
+        return;
+      }
       toast({
         title: "Error",
         description: "Failed to save your entry. Please try again.",

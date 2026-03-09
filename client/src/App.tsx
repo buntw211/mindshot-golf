@@ -17,6 +17,7 @@ import SessionDetail from "@/pages/session-detail";
 import Patterns from "@/pages/patterns";
 import Tips from "@/pages/tips";
 import StonkGolf from "@/pages/stonk-golf";
+import Subscribe from "@/pages/subscribe";
 import Landing from "@/pages/landing";
 
 function AuthenticatedRouter() {
@@ -30,6 +31,7 @@ function AuthenticatedRouter() {
       <Route path="/patterns" component={Patterns} />
       <Route path="/tips" component={Tips} />
       <Route path="/pro-training" component={StonkGolf} />
+      <Route path="/subscribe" component={Subscribe} />
       <Route component={NotFound} />
     </Switch>
   );
