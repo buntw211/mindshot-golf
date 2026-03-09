@@ -154,7 +154,9 @@ export async function registerRoutes(
   app.get("/api/patterns", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
-      const patterns = await storage.getPatterns(userId);
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const patterns = await storage.getPatterns(userId, startDate, endDate);
       res.json(patterns);
     } catch (error) {
       console.error("Error fetching patterns:", error);

@@ -1,9 +1,12 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   TrendingUp,
   TrendingDown,
@@ -15,10 +18,13 @@ import {
   HelpCircle,
   Sliders,
   BarChart3,
+  Calendar,
 } from "lucide-react";
 import type { PatternSummary, ThoughtCategory, RatingDataPoint } from "@shared/schema";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
+
+type DatePreset = "all" | "7d" | "30d" | "90d" | "custom";
 
 const categoryDescriptions: Record<ThoughtCategory, string> = {
   "confidence": "Your belief in your ability to execute shots and make decisions",
@@ -163,9 +169,117 @@ function PatternCard({ pattern }: { pattern: PatternSummary }) {
   );
 }
 
+function DateRangeFilter({
+  preset,
+  onPresetChange,
+  customStart,
+  customEnd,
+  onCustomStartChange,
+  onCustomEndChange,
+}: {
+  preset: DatePreset;
+  onPresetChange: (p: DatePreset) => void;
+  customStart: string;
+  customEnd: string;
+  onCustomStartChange: (v: string) => void;
+  onCustomEndChange: (v: string) => void;
+}) {
+  const presets: { value: DatePreset; label: string }[] = [
+    { value: "all", label: "All Time" },
+    { value: "7d", label: "Last 7 Days" },
+    { value: "30d", label: "Last 30 Days" },
+    { value: "90d", label: "Last 90 Days" },
+    { value: "custom", label: "Custom" },
+  ];
+
+  return (
+    <Card data-testid="card-date-filter">
+      <CardContent className="py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Time Period:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((p) => (
+              <Button
+                key={p.value}
+                variant={preset === p.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPresetChange(p.value)}
+                data-testid={`button-preset-${p.value}`}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
+          {preset === "custom" && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="start-date" className="text-xs text-muted-foreground">From</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => onCustomStartChange(e.target.value)}
+                  className="h-8 w-auto text-sm"
+                  data-testid="input-start-date"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="end-date" className="text-xs text-muted-foreground">To</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={customEnd}
+                  onChange={(e) => onCustomEndChange(e.target.value)}
+                  className="h-8 w-auto text-sm"
+                  data-testid="input-end-date"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Patterns() {
+  const [preset, setPreset] = useState<DatePreset>("all");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  const { startDate, endDate } = useMemo(() => {
+    if (preset === "all") return { startDate: undefined, endDate: undefined };
+    if (preset === "custom") {
+      let s = customStart || undefined;
+      let e = customEnd || undefined;
+      if (s && e && s > e) {
+        [s, e] = [e, s];
+      }
+      return { startDate: s, endDate: e };
+    }
+    const days = preset === "7d" ? 6 : preset === "30d" ? 29 : 89;
+    return {
+      startDate: format(subDays(new Date(), days), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    };
+  }, [preset, customStart, customEnd]);
+
+  const queryParams = new URLSearchParams();
+  if (startDate) queryParams.set("startDate", startDate);
+  if (endDate) queryParams.set("endDate", endDate);
+  const queryString = queryParams.toString();
+  const apiUrl = `/api/patterns${queryString ? `?${queryString}` : ""}`;
+
   const { data: patterns, isLoading } = useQuery<PatternSummary[]>({
-    queryKey: ["/api/patterns"],
+    queryKey: ["/api/patterns", startDate, endDate],
+    queryFn: async () => {
+      const res = await fetch(apiUrl, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch patterns");
+      return res.json();
+    },
   });
 
   if (isLoading) {
@@ -219,6 +333,15 @@ export default function Patterns() {
           </Button>
         </Link>
       </div>
+
+      <DateRangeFilter
+        preset={preset}
+        onPresetChange={setPreset}
+        customStart={customStart}
+        customEnd={customEnd}
+        onCustomStartChange={setCustomStart}
+        onCustomEndChange={setCustomEnd}
+      />
 
       <Card className="bg-accent/30 border-accent" data-testid="card-how-it-works">
         <CardHeader className="pb-3">

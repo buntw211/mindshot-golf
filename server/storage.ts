@@ -23,7 +23,7 @@ export interface IStorage {
   createSession(session: InsertJournalEntry, userId?: string): Promise<JournalEntry>;
   updateSession(id: string, data: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined>;
   deleteSession(id: string): Promise<void>;
-  getPatterns(userId?: string): Promise<PatternSummary[]>;
+  getPatterns(userId?: string, startDate?: string, endDate?: string): Promise<PatternSummary[]>;
   getDashboardStats(userId?: string): Promise<DashboardStats>;
   getUser(id: string): Promise<User | undefined>;
   getSessionCount(userId: string): Promise<number>;
@@ -146,8 +146,15 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getPatterns(userId?: string): Promise<PatternSummary[]> {
-    const allSessions = await this.getSessions(userId);
+  async getPatterns(userId?: string, startDate?: string, endDate?: string): Promise<PatternSummary[]> {
+    let allSessions = await this.getSessions(userId);
+
+    if (startDate) {
+      allSessions = allSessions.filter(s => s.date >= startDate);
+    }
+    if (endDate) {
+      allSessions = allSessions.filter(s => s.date <= endDate);
+    }
     
     const categoryData = new Map<ThoughtCategory, RatingDataPoint[]>();
     for (const category of thoughtCategories) {
