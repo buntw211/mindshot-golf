@@ -16,6 +16,8 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  Sliders,
+  BarChart3,
 } from "lucide-react";
 import type { PatternSummary, ThoughtCategory, RatingDataPoint } from "@shared/schema";
 import { format, subDays } from "date-fns";
@@ -258,24 +260,118 @@ export default function Patterns() {
 
       {showGuide && (
         <Card className="bg-accent/20 border-accent/40">
-          <CardContent className="py-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-2.5 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50">
-                <span className="font-semibold text-red-700 dark:text-red-400">1-3: Struggling</span>
-                <span className="text-muted-foreground"> — Significant challenge area</span>
+          <CardContent className="py-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Sliders className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm mb-0.5">Self-Assessment Ratings</h4>
+                  <p className="text-xs text-muted-foreground">
+                    After each session, you rate yourself 1-10 across 10 mental game categories. These ratings form the basis of your pattern tracking.
+                  </p>
+                </div>
               </div>
-              <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50">
-                <span className="font-semibold text-amber-700 dark:text-amber-400">4-6: Moderate</span>
-                <span className="text-muted-foreground"> — Room for improvement</span>
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm mb-0.5">Average Over Time</h4>
+                  <p className="text-xs text-muted-foreground">
+                    We calculate your average rating for each category and track how it changes across sessions so you can see trends.
+                  </p>
+                </div>
               </div>
-              <div className="p-2.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200/50 dark:border-green-800/50">
-                <span className="font-semibold text-green-700 dark:text-green-400">7-10: Strong</span>
-                <span className="text-muted-foreground"> — A real strength</span>
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm mb-0.5">Trend Detection</h4>
+                  <p className="text-xs text-muted-foreground">
+                    By comparing recent sessions to older ones, we identify which areas are improving and which need more attention.
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Ratings come from your self-assessments after each session. Use the time filter to compare different periods and spot trends in your mental game.
-            </p>
+
+            <div className="p-3 bg-card rounded-md border">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Why this matters:</span> Tracking your mental game with consistent 1-10 ratings reveals patterns you might not notice in the moment. Over time, you'll see which areas are growing and where to focus your mental training.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-2.5 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50">
+                <div className="font-semibold text-red-700 dark:text-red-400 mb-0.5">1-3: Struggling</div>
+                <p className="text-muted-foreground">This area was a significant challenge. You noticed it affecting your game negatively.</p>
+              </div>
+              <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50">
+                <div className="font-semibold text-amber-700 dark:text-amber-400 mb-0.5">4-6: Moderate</div>
+                <p className="text-muted-foreground">Average performance. Some good moments, some room for improvement.</p>
+              </div>
+              <div className="p-2.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200/50 dark:border-green-800/50">
+                <div className="font-semibold text-green-700 dark:text-green-400 mb-0.5">7-10: Strong</div>
+                <p className="text-muted-foreground">This area was a strength. You felt solid and it helped your performance.</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Category Scale Meanings</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Confidence:</span>
+                  <span className="text-muted-foreground"> 1 = Doubting every shot → 10 = Total belief in yourself</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Focus:</span>
+                  <span className="text-muted-foreground"> 1 = Mind wandering → 10 = Completely locked in</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Frustration:</span>
+                  <span className="text-muted-foreground"> 1 = Easily upset → 10 = Calm through mistakes</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Anxiety:</span>
+                  <span className="text-muted-foreground"> 1 = Very nervous → 10 = Completely relaxed</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Patience:</span>
+                  <span className="text-muted-foreground"> 1 = Rushing/impatient → 10 = Accepting the process</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Decision Making:</span>
+                  <span className="text-muted-foreground"> 1 = Uncertain/second-guessing → 10 = Decisive and committed</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Self-Talk:</span>
+                  <span className="text-muted-foreground"> 1 = Critical inner voice → 10 = Supportive inner coach</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Pressure:</span>
+                  <span className="text-muted-foreground"> 1 = Struggled under pressure → 10 = Thrived when it mattered</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Expectations:</span>
+                  <span className="text-muted-foreground"> 1 = Unrealistic demands → 10 = Balanced and fair to yourself</span>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <span className="font-medium">Acceptance:</span>
+                  <span className="text-muted-foreground"> 1 = Fighting results → 10 = Letting go and moving forward</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-accent/50 rounded-md">
+              <div className="flex items-start gap-2">
+                <Lightbulb className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm">
+                  <span className="font-medium">Tip:</span> Rate yourself honestly based on how you actually felt during the session, not how you wish you'd performed. Honest self-assessment is the foundation of real improvement.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
