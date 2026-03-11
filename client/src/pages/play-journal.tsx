@@ -218,14 +218,14 @@ export default function PlayJournal() {
       const res = await apiRequest("POST", "/api/sessions", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
         title: "Round Saved",
         description: "Your mental game journal entry has been saved.",
       });
-      navigate("/history");
+      navigate(`/sessions/${data.id}`);
     },
     onError: (error: any) => {
       const errorMsg = error?.message || "";
