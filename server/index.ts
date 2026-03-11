@@ -32,19 +32,37 @@ async function initStripe() {
   const stripeSync = await getStripeSync();
 
   log('Setting up managed webhook...', 'stripe');
-  const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
-  const webhookResult = await stripeSync.findOrCreateManagedWebhook(
-    `${webhookBaseUrl}/api/stripe/webhook`
-  );
-  log(`Webhook configured: ${webhookResult?.webhook?.url || 'ready'}`, 'stripe');
+  const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPL_SLUG || '';
+  const domain = replitDomains.split(',')[0];
+  if (domain) {
+    const webhookBaseUrl = `https://${domain}`;
+    const webhookResult = await stripeSync.findOrCreateManagedWebhook(
+      `${webhookBaseUrl}/api/stripe/webhook`
+    );
+    log(`Webhook configured: ${webhookResult?.webhook?.url || 'ready'}`, 'stripe');
+  } else {
+    log('No domain available for webhook, skipping webhook setup', 'stripe');
+  }
 
   stripeSync.syncBackfill()
     .then(() => log('Stripe data synced', 'stripe'))
     .catch((err: any) => console.error('Error syncing Stripe data:', err));
 }
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
 (async () => {
-  await initStripe();
+  try {
+    await initStripe();
+  } catch (err) {
+    console.error('Stripe initialization error (non-fatal):', err);
+  }
 
   app.post(
     '/api/stripe/webhook',
@@ -133,4 +151,12 @@ async function initStripe() {
       log(`serving on port ${port}`);
     },
   );
+
+  httpServer.on('error', (err: any) => {
+    console.error('Server listen error:', err);
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use`);
+    }
+    process.exit(1);
+  });
 })();
