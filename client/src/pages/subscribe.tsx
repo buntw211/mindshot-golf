@@ -117,6 +117,16 @@ export default function Subscribe() {
             >
               {manageMutation.isPending ? "Loading..." : "Manage Subscription"}
             </Button>
+            <div>
+              <button
+                onClick={() => manageMutation.mutate()}
+                disabled={manageMutation.isPending}
+                data-testid="button-cancel-subscription"
+                className="text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive transition-colors disabled:opacity-50"
+              >
+                Cancel Subscription
+              </button>
+            </div>
           </CardContent>
         </Card>
       ) : (
