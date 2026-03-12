@@ -419,15 +419,45 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
 
       const stripe = await getUncachableStripeClient();
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const portalSession = await stripe.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
-        return_url: `${baseUrl}/`,
-      });
 
-      res.json({ url: portalSession.url });
+      let customerId = user.stripeCustomerId;
+
+      // Try to create the portal session; if the stored customer ID is stale,
+      // fall back to searching Stripe by email and update our record.
+      try {
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${baseUrl}/`,
+        });
+        return res.json({ url: portalSession.url });
+      } catch (stripeErr: any) {
+        if (stripeErr?.code !== "resource_missing") throw stripeErr;
+
+        // Customer ID is stale — try to find the real customer by email
+        if (user.email) {
+          const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+          if (customers.data.length > 0) {
+            customerId = customers.data[0].id;
+            await storage.updateUserSubscription(userId, { stripeCustomerId: customerId });
+            const portalSession = await stripe.billingPortal.sessions.create({
+              customer: customerId,
+              return_url: `${baseUrl}/`,
+            });
+            return res.json({ url: portalSession.url });
+          }
+        }
+
+        // No valid customer found — clear stale data
+        await storage.updateUserSubscription(userId, {
+          stripeCustomerId: undefined,
+          subscriptionStatus: "free",
+          subscriptionTier: null,
+        });
+        return res.status(400).json({ error: "Subscription not found. Your account has been reset to free." });
+      }
     } catch (error) {
       console.error("Error creating portal session:", error);
-      res.status(500).json({ error: "Failed to create portal session" });
+      res.status(500).json({ error: "Failed to open subscription management. Please try again." });
     }
   });
 

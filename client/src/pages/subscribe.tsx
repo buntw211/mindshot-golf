@@ -54,7 +54,20 @@ export default function Subscribe() {
     onSuccess: (data) => {
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        toast({
+          title: "Subscription Issue",
+          description: data.error,
+          variant: "destructive",
+        });
       }
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "Could not open subscription management. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
