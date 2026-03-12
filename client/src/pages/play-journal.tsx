@@ -225,7 +225,7 @@ export default function PlayJournal() {
         title: "Round Saved",
         description: "Your mental game journal entry has been saved.",
       });
-      navigate(`/sessions/${data.id}`);
+      navigate(`/session/${data.id}`);
     },
     onError: (error: any) => {
       const errorMsg = error?.message || "";
