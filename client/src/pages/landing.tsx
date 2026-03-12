@@ -14,19 +14,13 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
               <img src={mindshotLogo} alt="MindShot" className="w-8 h-8 object-contain" data-testid="img-landing-logo" />
             </div>
             <span className="text-xl font-bold">MindShot</span>
           </div>
-          <Button data-testid="button-login" asChild>
-            <a href="/api/login">
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </a>
-          </Button>
         </div>
       </nav>
 
