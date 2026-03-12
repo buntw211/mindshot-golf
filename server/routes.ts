@@ -354,13 +354,19 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
       let user = await storage.getUser(userId);
 
       let customerId = user?.stripeCustomerId;
-      if (!customerId) {
+
+      // Helper to create a fresh Stripe customer
+      const createFreshCustomer = async () => {
         const customer = await stripe.customers.create({
           email: userEmail,
           metadata: { userId },
         });
-        customerId = customer.id;
         await storage.updateUserSubscription(userId, { stripeCustomerId: customer.id });
+        return customer.id;
+      };
+
+      if (!customerId) {
+        customerId = await createFreshCustomer();
       }
 
       const priceResult = await db.execute(
@@ -389,17 +395,27 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
       }
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: 'subscription',
-        success_url: `${baseUrl}/?checkout=success`,
-        cancel_url: `${baseUrl}/?checkout=cancel`,
-        subscription_data: {
-          metadata: { userId },
-        },
-      });
+
+      const createCheckout = async (custId: string) =>
+        stripe.checkout.sessions.create({
+          customer: custId,
+          payment_method_types: ['card'],
+          line_items: [{ price: priceId, quantity: 1 }],
+          mode: 'subscription',
+          success_url: `${baseUrl}/?checkout=success`,
+          cancel_url: `${baseUrl}/?checkout=cancel`,
+          subscription_data: { metadata: { userId } },
+        });
+
+      let session;
+      try {
+        session = await createCheckout(customerId);
+      } catch (stripeErr: any) {
+        if (stripeErr?.code !== "resource_missing") throw stripeErr;
+        // Stale customer — create a new one and retry
+        customerId = await createFreshCustomer();
+        session = await createCheckout(customerId);
+      }
 
       res.json({ url: session.url });
     } catch (error) {
