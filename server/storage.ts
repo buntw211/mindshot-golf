@@ -28,6 +28,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getSessionCount(userId: string): Promise<number>;
   updateUserSubscription(userId: string, data: { stripeCustomerId?: string; subscriptionStatus?: string; subscriptionTier?: string | null }): Promise<void>;
+  deleteAccount(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,6 +85,11 @@ export class DatabaseStorage implements IStorage {
     subscriptionTier?: string | null;
   }): Promise<void> {
     await db.update(users).set(data).where(eq(users.id, userId));
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    await db.delete(journalEntries).where(eq(journalEntries.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   private analyzeSessionContent(session: JournalEntry): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {

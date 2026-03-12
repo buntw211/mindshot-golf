@@ -1,9 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Crown, Sparkles, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { CheckCircle, Crown, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -18,6 +28,7 @@ interface SubscriptionInfo {
 
 export default function Subscribe() {
   const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
@@ -66,6 +77,23 @@ export default function Subscribe() {
       toast({
         title: "Something went wrong",
         description: "Could not open subscription management. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", "/api/account");
+      return res.json();
+    },
+    onSuccess: () => {
+      window.location.href = "/";
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please try again.",
         variant: "destructive",
       });
     },
@@ -242,6 +270,66 @@ export default function Subscribe() {
         <p>Payments are processed securely through Stripe.</p>
         <p>You can cancel your subscription at any time.</p>
       </div>
+
+      <div className="border-t pt-8 max-w-md mx-auto space-y-3">
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-center">
+          Danger Zone
+        </h3>
+        <p className="text-sm text-muted-foreground text-center">
+          Permanently delete your account and all journal entries.
+          {subInfo?.isSubscribed && " Your active subscription will be cancelled automatically."}
+        </p>
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            data-testid="button-delete-account"
+            className="text-sm text-destructive underline underline-offset-4 hover:text-destructive/80 transition-colors"
+          >
+            Delete my account
+          </button>
+        </div>
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              Delete Account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">This will permanently delete:</span>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All your journal entries and insights</li>
+                <li>Your pattern history and ratings</li>
+                <li>Your account and profile</li>
+                {subInfo?.isSubscribed && <li>Your active Pro subscription (cancelled immediately)</li>}
+              </ul>
+              <span className="block font-medium text-foreground mt-2">This cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
+              Keep My Account
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteAccountMutation.mutate()}
+              disabled={deleteAccountMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-account"
+            >
+              {deleteAccountMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, Delete Everything"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

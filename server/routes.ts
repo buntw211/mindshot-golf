@@ -515,5 +515,44 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
     }
   });
 
+  app.delete("/api/account", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const user = await storage.getUser(userId);
+
+      // Cancel any active Stripe subscription before deleting
+      if (user?.stripeCustomerId) {
+        try {
+          const stripe = await getUncachableStripeClient();
+          const subResult = await db.execute(
+            sql`SELECT id, status FROM stripe.subscriptions WHERE customer = ${user.stripeCustomerId} AND status IN ('active', 'trialing') LIMIT 1`
+          );
+          if (subResult.rows.length > 0) {
+            const sub = subResult.rows[0] as any;
+            await stripe.subscriptions.cancel(sub.id);
+          }
+        } catch (stripeErr) {
+          // Log but don't block account deletion if Stripe fails
+          console.error("Could not cancel Stripe subscription during account deletion:", stripeErr);
+        }
+      }
+
+      // Delete all journal entries and the user record
+      await storage.deleteAccount(userId);
+
+      // Destroy the session and log out
+      req.logout(() => {
+        req.session.destroy((err: any) => {
+          if (err) console.error("Session destroy error during account deletion:", err);
+          res.clearCookie("connect.sid");
+          res.json({ success: true });
+        });
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account. Please try again." });
+    }
+  });
+
   return httpServer;
 }
