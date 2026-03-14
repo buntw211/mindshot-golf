@@ -369,29 +369,23 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
         customerId = await createFreshCustomer();
       }
 
-      const priceResult = await db.execute(
-        sql`SELECT id, recurring, unit_amount FROM stripe.prices WHERE active = true AND recurring IS NOT NULL ORDER BY unit_amount ASC`
-      );
-      
-      const prices = priceResult.rows;
+      // Fetch prices directly from Stripe API (avoids sync timing issues)
+      const stripesPrices = await stripe.prices.list({ active: true, type: 'recurring', limit: 20 });
+      const prices = stripesPrices.data;
+
       let priceId: string;
-      
+
       if (plan === "monthly") {
-        const monthlyPrice = prices.find((p: any) => {
-          const recurring = typeof p.recurring === 'string' ? JSON.parse(p.recurring) : p.recurring;
-          return recurring?.interval === 'month';
-        });
+        const monthlyPrice = prices.find((p: any) => p.recurring?.interval === 'month');
         priceId = monthlyPrice?.id as string;
       } else {
-        const yearlyPrice = prices.find((p: any) => {
-          const recurring = typeof p.recurring === 'string' ? JSON.parse(p.recurring) : p.recurring;
-          return recurring?.interval === 'year';
-        });
+        const yearlyPrice = prices.find((p: any) => p.recurring?.interval === 'year');
         priceId = yearlyPrice?.id as string;
       }
 
       if (!priceId) {
-        return res.status(500).json({ error: "Price not found. Products may not be set up yet." });
+        console.error(`No ${plan} price found in Stripe. Available prices:`, prices.map(p => ({ id: p.id, interval: p.recurring?.interval, amount: p.unit_amount })));
+        return res.status(500).json({ error: "Price not found. Please contact support." });
       }
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
