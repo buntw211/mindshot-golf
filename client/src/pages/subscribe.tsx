@@ -87,8 +87,9 @@ export default function Subscribe() {
       const res = await apiRequest("DELETE", "/api/account");
       return res.json();
     },
-    onSuccess: () => {
-      window.location.href = "/";
+    onSuccess: (data) => {
+      // Redirect to OIDC logout to fully end the Replit session
+      window.location.href = data.logoutUrl ?? "/api/logout";
     },
     onError: () => {
       toast({
