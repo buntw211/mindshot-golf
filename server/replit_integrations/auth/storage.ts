@@ -15,11 +15,12 @@ class AuthStorage implements IAuthStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    // Check if account has been deleted — do not revive it
+  async upsertUser(userData: UpsertUser): Promise<User & { wasRevived?: boolean }> {
+    // Check if account was previously deleted — clear the flag and let them start fresh
     const existing = await this.getUser(userData.id as string);
-    if (existing?.deletedAt) {
-      return existing;
+    const wasRevived = !!existing?.deletedAt;
+    if (wasRevived) {
+      await db.update(users).set({ deletedAt: null, updatedAt: new Date() }).where(eq(users.id, userData.id as string));
     }
 
     try {
@@ -34,7 +35,7 @@ class AuthStorage implements IAuthStorage {
           },
         })
         .returning();
-      return user;
+      return { ...user, wasRevived };
     } catch (error: any) {
       // If the email uniqueness constraint fails (e.g. email already tied to
       // a different Replit account), retry without the email field so the
@@ -53,7 +54,7 @@ class AuthStorage implements IAuthStorage {
             },
           })
           .returning();
-        return user;
+        return { ...user, wasRevived };
       }
       throw error;
     }

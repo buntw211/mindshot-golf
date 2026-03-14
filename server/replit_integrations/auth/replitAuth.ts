@@ -73,11 +73,11 @@ export async function setupAuth(app: Express) {
     verified: passport.AuthenticateCallback
   ) => {
     try {
-      const user = {};
+      const user: any = {};
       updateUserSession(user, tokens);
       const dbUser = await upsertUser(tokens.claims());
-      if (dbUser.deletedAt) {
-        return verified(null, false, { message: "account_deleted" });
+      if (dbUser.wasRevived) {
+        user.wasRevived = true;
       }
       verified(null, user);
     } catch (error) {
@@ -122,15 +122,11 @@ export async function setupAuth(app: Express) {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any, info: any) => {
       if (err) return next(err);
-      if (!user) {
-        if (info?.message === "account_deleted") {
-          return res.redirect("/account-deleted");
-        }
-        return res.redirect("/api/login");
-      }
+      if (!user) return res.redirect("/api/login");
       req.logIn(user, (loginErr) => {
         if (loginErr) return next(loginErr);
-        res.redirect("/");
+        // Revived accounts see the "account deleted" notice first before entering the app
+        res.redirect(user.wasRevived ? "/account-deleted" : "/");
       });
     })(req, res, next);
   });
