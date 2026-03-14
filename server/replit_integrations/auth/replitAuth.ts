@@ -75,7 +75,10 @@ export async function setupAuth(app: Express) {
     try {
       const user = {};
       updateUserSession(user, tokens);
-      await upsertUser(tokens.claims());
+      const dbUser = await upsertUser(tokens.claims());
+      if (dbUser.deletedAt) {
+        return verified(null, false, { message: "account_deleted" });
+      }
       verified(null, user);
     } catch (error) {
       console.error("Auth verify error:", error);
@@ -117,9 +120,18 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/callback", (req, res, next) => {
     ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        if (info?.message === "account_deleted") {
+          return res.redirect("/account-deleted");
+        }
+        return res.redirect("/api/login");
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        res.redirect("/");
+      });
     })(req, res, next);
   });
 

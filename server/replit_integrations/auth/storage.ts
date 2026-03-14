@@ -16,6 +16,12 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Check if account has been deleted — do not revive it
+    const existing = await this.getUser(userData.id as string);
+    if (existing?.deletedAt) {
+      return existing;
+    }
+
     try {
       const [user] = await db
         .insert(users)

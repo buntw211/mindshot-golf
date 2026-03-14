@@ -19,6 +19,7 @@ import Tips from "@/pages/tips";
 import StonkGolf from "@/pages/stonk-golf";
 import Subscribe from "@/pages/subscribe";
 import Landing from "@/pages/landing";
+import AccountDeleted from "@/pages/account-deleted";
 
 function AuthenticatedRouter() {
   return (
@@ -81,6 +82,11 @@ function LoadingScreen() {
 
 function AppContent() {
   const { isLoading, isAuthenticated } = useAuth();
+
+  // Always show this page regardless of auth state
+  if (window.location.pathname === "/account-deleted") {
+    return <AccountDeleted />;
+  }
 
   if (isLoading) {
     return <LoadingScreen />;

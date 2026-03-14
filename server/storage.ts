@@ -88,8 +88,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAccount(userId: string): Promise<void> {
+    // Permanently delete all journal entries
     await db.delete(journalEntries).where(eq(journalEntries.userId, userId));
-    await db.delete(users).where(eq(users.id, userId));
+    // Mark the user record as deleted (so they cannot sign back in)
+    await db.update(users).set({
+      deletedAt: new Date(),
+      subscriptionStatus: "free",
+      subscriptionTier: null,
+      stripeCustomerId: null,
+    }).where(eq(users.id, userId));
   }
 
   private analyzeSessionContent(session: JournalEntry): Map<ThoughtCategory, { positive: number; negative: number; neutral: number }> {
