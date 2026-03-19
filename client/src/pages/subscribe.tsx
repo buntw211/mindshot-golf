@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, Crown, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { CheckCircle, Crown, Loader2, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -22,7 +21,7 @@ interface SubscriptionInfo {
   subscriptionStatus: string;
   subscriptionTier: string | null;
   sessionCount: number;
-  freeEntriesRemaining: number;
+  freeEntriesRemaining: number | null;
   isSubscribed: boolean;
 }
 
@@ -38,57 +37,12 @@ export default function Subscribe() {
     queryKey: ["/api/subscription"],
   });
 
-  const checkoutMutation = useMutation({
-    mutationFn: async (plan: "monthly" | "yearly") => {
-      const res = await apiRequest("POST", "/api/checkout", { plan });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to start checkout. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const manageMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/manage-subscription", {});
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        toast({
-          title: "Subscription Issue",
-          description: data.error,
-          variant: "destructive",
-        });
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Something went wrong",
-        description: "Could not open subscription management. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("DELETE", "/api/account");
       return res.json();
     },
     onSuccess: (data) => {
-      // Redirect to OIDC logout to fully end the Replit session
       window.location.href = data.logoutUrl ?? "/api/logout";
     },
     onError: () => {
@@ -108,8 +62,6 @@ export default function Subscribe() {
     );
   }
 
-  const isSubscribed = subInfo?.isSubscribed;
-
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-4">
@@ -117,160 +69,46 @@ export default function Subscribe() {
           <img src={mindshotLogo} alt="MindShot" className="w-12 h-12 object-contain" />
         </div>
         <h1 className="text-3xl font-bold" data-testid="text-subscribe-title">
-          {isSubscribed ? "Your Subscription" : "Upgrade to MindShot Pro"}
+          MindShot Pro
         </h1>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          {isSubscribed
-            ? "You have unlimited access to all features."
-            : "Unlock unlimited journal entries and take your mental game to the next level."}
+          All features are currently free to use. In-app subscriptions are coming soon.
         </p>
       </div>
 
-      {!isSubscribed && subInfo && (
-        <div className="text-center">
-          <Badge variant="secondary" className="text-sm px-4 py-1" data-testid="badge-free-remaining">
-            {subInfo.freeEntriesRemaining > 0
-              ? `${subInfo.freeEntriesRemaining} free ${subInfo.freeEntriesRemaining === 1 ? 'entry' : 'entries'} remaining`
-              : "Free entries used — subscribe to continue"}
-          </Badge>
-        </div>
-      )}
-
-      {isSubscribed ? (
-        <Card className="max-w-md mx-auto border-primary/30">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Crown className="w-5 h-5 text-primary" />
-              <CardTitle>MindShot Pro</CardTitle>
-            </div>
-            <CardDescription>
-              {subInfo?.subscriptionTier === "yearly" ? "Yearly Plan" : "Monthly Plan"} — Active
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {subInfo?.sessionCount} journal entries created
+      <Card className="max-w-md mx-auto border-primary/20">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Crown className="w-5 h-5 text-primary" />
+            <CardTitle>What's included</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              Unlimited journal entries
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              Full pattern analysis
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              Self-assessment comparisons
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              AI-powered mental game insights
+            </li>
+          </ul>
+          {subInfo && (
+            <p className="text-xs text-muted-foreground text-center pt-2 border-t">
+              {subInfo.sessionCount} journal {subInfo.sessionCount === 1 ? "entry" : "entries"} created
             </p>
-            <Button
-              variant="outline"
-              onClick={() => manageMutation.mutate()}
-              disabled={manageMutation.isPending}
-              data-testid="button-manage-subscription"
-            >
-              {manageMutation.isPending ? "Loading..." : "Manage Subscription"}
-            </Button>
-            <div>
-              <button
-                onClick={() => manageMutation.mutate()}
-                disabled={manageMutation.isPending}
-                data-testid="button-cancel-subscription"
-                className="text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive transition-colors disabled:opacity-50"
-              >
-                Cancel Subscription
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          <Card className="relative hover-elevate">
-            <CardHeader>
-              <CardTitle className="text-lg">Monthly</CardTitle>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">$9.99</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Unlimited journal entries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Full pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Self-assessment comparisons
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Cancel anytime
-                </li>
-              </ul>
-              <Button
-                className="w-full"
-                onClick={() => checkoutMutation.mutate("monthly")}
-                disabled={checkoutMutation.isPending}
-                data-testid="button-checkout-monthly"
-              >
-                {checkoutMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-2" />
-                )}
-                Subscribe Monthly
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="relative border-primary/50 hover-elevate">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
-                Best Value — Save $30
-              </Badge>
-            </div>
-            <CardHeader>
-              <CardTitle className="text-lg">Yearly</CardTitle>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">$89.99</span>
-                <span className="text-muted-foreground">/year</span>
-              </div>
-              <p className="text-sm text-muted-foreground">That's just $7.50/month</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Unlimited journal entries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Full pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Self-assessment comparisons
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  2 months free
-                </li>
-              </ul>
-              <Button
-                className="w-full"
-                onClick={() => checkoutMutation.mutate("yearly")}
-                disabled={checkoutMutation.isPending}
-                data-testid="button-checkout-yearly"
-              >
-                {checkoutMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Crown className="w-4 h-4 mr-2" />
-                )}
-                Subscribe Yearly
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div className="text-center text-xs text-muted-foreground space-y-1">
-        <p>Payments are processed securely through Stripe.</p>
-        <p>You can cancel your subscription at any time.</p>
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="border-t pt-8 max-w-md mx-auto space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-center">
@@ -278,7 +116,6 @@ export default function Subscribe() {
         </h3>
         <p className="text-sm text-muted-foreground text-center">
           Permanently delete your account and all journal entries.
-          {subInfo?.isSubscribed && " Your active subscription will be cancelled automatically."}
         </p>
         <div className="flex justify-center">
           <button
@@ -304,7 +141,6 @@ export default function Subscribe() {
                 <li>All your journal entries and insights</li>
                 <li>Your pattern history and ratings</li>
                 <li>Your account and profile</li>
-                {subInfo?.isSubscribed && <li>Your active Pro subscription (cancelled immediately)</li>}
               </ul>
               <span className="block font-medium text-foreground mt-2">This cannot be undone.</span>
             </AlertDialogDescription>

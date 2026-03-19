@@ -8,9 +8,6 @@ import multer from "multer";
 import path from "path";
 import { randomUUID } from "crypto";
 import express from "express";
-import { getUncachableStripeClient } from "./stripeClient";
-import { sql } from "drizzle-orm";
-import { db } from "./db";
 import OpenAI from "openai";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -29,8 +26,6 @@ const upload = multer({
     cb(null, allowed.includes(file.mimetype));
   },
 });
-
-const FREE_ENTRY_LIMIT = 4;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -78,30 +73,6 @@ export async function registerRoutes(
   app.post("/api/sessions", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
-
-      let user = await storage.getUser(userId);
-      let isSubscribed = user?.subscriptionStatus === "active";
-
-      if (!isSubscribed && user?.stripeCustomerId) {
-        const subResult = await db.execute(
-          sql`SELECT status FROM stripe.subscriptions WHERE customer = ${user.stripeCustomerId} AND (status = 'active' OR status = 'trialing') LIMIT 1`
-        );
-        if (subResult.rows.length > 0) {
-          await storage.updateUserSubscription(userId, { subscriptionStatus: "active" });
-          isSubscribed = true;
-        }
-      }
-
-      if (!isSubscribed) {
-        const sessionCount = await storage.getSessionCount(userId);
-        if (sessionCount >= FREE_ENTRY_LIMIT) {
-          return res.status(403).json({ 
-            error: "Free entry limit reached",
-            message: "You've used all 4 free journal entries. Subscribe to continue journaling.",
-            limitReached: true
-          });
-        }
-      }
 
       const validatedData = insertSessionSchema.parse(req.body);
       const session = await storage.createSession(validatedData, userId);
@@ -305,34 +276,15 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
   app.get("/api/subscription", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
-      let user = await storage.getUser(userId);
+      const user = await storage.getUser(userId);
       const sessionCount = await storage.getSessionCount(userId);
 
-      if (user?.stripeCustomerId) {
-        const subResult = await db.execute(
-          sql`SELECT id, status, items FROM stripe.subscriptions WHERE customer = ${user.stripeCustomerId} ORDER BY created DESC LIMIT 1`
-        );
-        if (subResult.rows.length > 0) {
-          const sub = subResult.rows[0] as any;
-          const status = sub.status === "active" || sub.status === "trialing" ? "active" : "canceled";
-          let tier: string | null = null;
-          const items = typeof sub.items === 'string' ? JSON.parse(sub.items) : sub.items;
-          if (items?.data?.[0]?.price?.recurring?.interval) {
-            tier = items.data[0].price.recurring.interval === 'year' ? 'yearly' : 'monthly';
-          }
-          if (user.subscriptionStatus !== status || user.subscriptionTier !== tier) {
-            await storage.updateUserSubscription(userId, { subscriptionStatus: status, subscriptionTier: tier });
-            user = await storage.getUser(userId);
-          }
-        }
-      }
-      
       res.json({
         subscriptionStatus: user?.subscriptionStatus || "free",
         subscriptionTier: user?.subscriptionTier || null,
         sessionCount,
-        freeEntriesRemaining: Math.max(0, FREE_ENTRY_LIMIT - sessionCount),
-        isSubscribed: user?.subscriptionStatus === "active",
+        freeEntriesRemaining: null,
+        isSubscribed: false,
       });
     } catch (error) {
       console.error("Error fetching subscription:", error);
@@ -340,197 +292,9 @@ ${journalContent ? `\nJournal Notes:\n${journalContent}` : "(No detailed notes p
     }
   });
 
-  app.post("/api/checkout", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user?.claims?.sub;
-      const userEmail = req.user?.claims?.email;
-      const { plan } = req.body;
-
-      if (!plan || !["monthly", "yearly"].includes(plan)) {
-        return res.status(400).json({ error: "Invalid plan. Must be 'monthly' or 'yearly'" });
-      }
-
-      const stripe = await getUncachableStripeClient();
-      let user = await storage.getUser(userId);
-
-      let customerId = user?.stripeCustomerId;
-
-      // Helper to create a fresh Stripe customer
-      const createFreshCustomer = async () => {
-        const customer = await stripe.customers.create({
-          email: userEmail,
-          metadata: { userId },
-        });
-        await storage.updateUserSubscription(userId, { stripeCustomerId: customer.id });
-        return customer.id;
-      };
-
-      if (!customerId) {
-        customerId = await createFreshCustomer();
-      }
-
-      // Fetch prices directly from Stripe API (avoids sync timing issues)
-      const stripesPrices = await stripe.prices.list({ active: true, type: 'recurring', limit: 20 });
-      const prices = stripesPrices.data;
-
-      let priceId: string;
-
-      if (plan === "monthly") {
-        const monthlyPrice = prices.find((p: any) => p.recurring?.interval === 'month');
-        priceId = monthlyPrice?.id as string;
-      } else {
-        const yearlyPrice = prices.find((p: any) => p.recurring?.interval === 'year');
-        priceId = yearlyPrice?.id as string;
-      }
-
-      if (!priceId) {
-        console.error(`No ${plan} price found in Stripe. Available prices:`, prices.map(p => ({ id: p.id, interval: p.recurring?.interval, amount: p.unit_amount })));
-        return res.status(500).json({ error: "Price not found. Please contact support." });
-      }
-
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-
-      const createCheckout = async (custId: string) =>
-        stripe.checkout.sessions.create({
-          customer: custId,
-          payment_method_types: ['card'],
-          line_items: [{ price: priceId, quantity: 1 }],
-          mode: 'subscription',
-          success_url: `${baseUrl}/?checkout=success`,
-          cancel_url: `${baseUrl}/?checkout=cancel`,
-          subscription_data: { metadata: { userId } },
-        });
-
-      let session;
-      try {
-        session = await createCheckout(customerId);
-      } catch (stripeErr: any) {
-        if (stripeErr?.code !== "resource_missing") throw stripeErr;
-        // Stale customer — create a new one and retry
-        customerId = await createFreshCustomer();
-        session = await createCheckout(customerId);
-      }
-
-      res.json({ url: session.url });
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-      res.status(500).json({ error: "Failed to create checkout session" });
-    }
-  });
-
-  app.post("/api/manage-subscription", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user?.claims?.sub;
-      const user = await storage.getUser(userId);
-
-      if (!user?.stripeCustomerId) {
-        return res.status(400).json({ error: "No subscription found" });
-      }
-
-      const stripe = await getUncachableStripeClient();
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-
-      let customerId = user.stripeCustomerId;
-
-      // Try to create the portal session; if the stored customer ID is stale,
-      // fall back to searching Stripe by email and update our record.
-      try {
-        const portalSession = await stripe.billingPortal.sessions.create({
-          customer: customerId,
-          return_url: `${baseUrl}/`,
-        });
-        return res.json({ url: portalSession.url });
-      } catch (stripeErr: any) {
-        if (stripeErr?.code !== "resource_missing") throw stripeErr;
-
-        // Customer ID is stale — try to find the real customer by email
-        if (user.email) {
-          const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-          if (customers.data.length > 0) {
-            customerId = customers.data[0].id;
-            await storage.updateUserSubscription(userId, { stripeCustomerId: customerId });
-            const portalSession = await stripe.billingPortal.sessions.create({
-              customer: customerId,
-              return_url: `${baseUrl}/`,
-            });
-            return res.json({ url: portalSession.url });
-          }
-        }
-
-        // No valid customer found — clear stale data
-        await storage.updateUserSubscription(userId, {
-          stripeCustomerId: undefined,
-          subscriptionStatus: "free",
-          subscriptionTier: null,
-        });
-        return res.status(400).json({ error: "Subscription not found. Your account has been reset to free." });
-      }
-    } catch (error) {
-      console.error("Error creating portal session:", error);
-      res.status(500).json({ error: "Failed to open subscription management. Please try again." });
-    }
-  });
-
-  app.post("/api/sync-subscription", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user?.claims?.sub;
-      const user = await storage.getUser(userId);
-
-      if (!user?.stripeCustomerId) {
-        return res.json({ subscriptionStatus: "free" });
-      }
-
-      const subResult = await db.execute(
-        sql`SELECT id, status, items FROM stripe.subscriptions WHERE customer = ${user.stripeCustomerId} ORDER BY created DESC LIMIT 1`
-      );
-
-      if (subResult.rows.length > 0) {
-        const sub = subResult.rows[0] as any;
-        const status = sub.status === "active" || sub.status === "trialing" ? "active" : "canceled";
-        
-        let tier: string | null = null;
-        const items = typeof sub.items === 'string' ? JSON.parse(sub.items) : sub.items;
-        if (items?.data?.[0]?.price?.recurring?.interval) {
-          tier = items.data[0].price.recurring.interval === 'year' ? 'yearly' : 'monthly';
-        }
-
-        await storage.updateUserSubscription(userId, {
-          subscriptionStatus: status,
-          subscriptionTier: tier,
-        });
-
-        return res.json({ subscriptionStatus: status, subscriptionTier: tier });
-      }
-
-      return res.json({ subscriptionStatus: "free" });
-    } catch (error) {
-      console.error("Error syncing subscription:", error);
-      res.status(500).json({ error: "Failed to sync subscription" });
-    }
-  });
-
   app.delete("/api/account", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
-      const user = await storage.getUser(userId);
-
-      // Cancel any active Stripe subscription directly via Stripe API before deleting
-      if (user?.stripeCustomerId) {
-        try {
-          const stripe = await getUncachableStripeClient();
-          const activeSubs = await stripe.subscriptions.list({
-            customer: user.stripeCustomerId,
-            status: "active",
-            limit: 5,
-          });
-          for (const sub of activeSubs.data) {
-            await stripe.subscriptions.cancel(sub.id);
-          }
-        } catch (stripeErr) {
-          // Log but don't block account deletion if Stripe fails
-          console.error("Could not cancel Stripe subscription during account deletion:", stripeErr);
-        }
-      }
 
       // Delete all journal entries and the user record
       await storage.deleteAccount(userId);

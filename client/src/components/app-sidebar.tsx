@@ -21,9 +21,7 @@ import {
   Crown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import { DrivingRangeIcon } from "@/components/driving-range-icon";
@@ -71,21 +69,9 @@ const viewItems = [
   },
 ];
 
-interface SubscriptionInfo {
-  subscriptionStatus: string;
-  subscriptionTier: string | null;
-  sessionCount: number;
-  freeEntriesRemaining: number;
-  isSubscribed: boolean;
-}
-
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
-  const { data: subInfo } = useQuery<SubscriptionInfo>({
-    queryKey: ["/api/subscription"],
-  });
-
   const userInitials = user 
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'
     : 'U';
@@ -164,17 +150,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild isActive={location === "/subscribe"}>
                   <Link href="/subscribe" data-testid="link-subscribe">
                     <Crown className="w-4 h-4" />
-                    <span>{subInfo?.isSubscribed ? "Subscription" : "Upgrade to Pro"}</span>
-                    {!subInfo?.isSubscribed && subInfo?.freeEntriesRemaining !== undefined && (
-                      <Badge variant="secondary" className="ml-auto text-xs" data-testid="badge-sidebar-free">
-                        {subInfo.freeEntriesRemaining} free
-                      </Badge>
-                    )}
-                    {subInfo?.isSubscribed && (
-                      <Badge className="ml-auto text-xs bg-primary/20 text-primary" data-testid="badge-sidebar-pro">
-                        Pro
-                      </Badge>
-                    )}
+                    <span>Account</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

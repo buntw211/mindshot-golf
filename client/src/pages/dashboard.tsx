@@ -12,21 +12,12 @@ import {
   Smile,
   Focus,
   BarChart3,
-  Crown,
 } from "lucide-react";
 import { GolfFlagIcon } from "@/components/golf-flag-icon";
 import { DrivingRangeIcon } from "@/components/driving-range-icon";
 import type { DashboardStats, Session } from "@shared/schema";
 import { format } from "date-fns";
 import mindshotLogo from "@assets/mindshot_logo.png";
-
-interface SubscriptionInfo {
-  subscriptionStatus: string;
-  subscriptionTier: string | null;
-  sessionCount: number;
-  freeEntriesRemaining: number;
-  isSubscribed: boolean;
-}
 
 function StatCard({
   title,
@@ -149,10 +140,6 @@ export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard"],
   });
-  const { data: subInfo } = useQuery<SubscriptionInfo>({
-    queryKey: ["/api/subscription"],
-  });
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -208,36 +195,6 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
-
-      {subInfo && !subInfo.isSubscribed && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <Crown className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium" data-testid="text-free-entries">
-                    {subInfo.freeEntriesRemaining > 0
-                      ? `${subInfo.freeEntriesRemaining} of 4 free entries remaining`
-                      : "You've used all 4 free entries"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {subInfo.freeEntriesRemaining > 0
-                      ? "Upgrade to Pro for unlimited journal entries"
-                      : "Subscribe to continue journaling"}
-                  </p>
-                </div>
-              </div>
-              <Link href="/subscribe">
-                <Button size="sm" data-testid="button-dashboard-upgrade">
-                  <Crown className="w-4 h-4 mr-1" />
-                  {subInfo.freeEntriesRemaining > 0 ? "Upgrade" : "Subscribe Now"}
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {!hasData ? (
         <Card className="p-12">
