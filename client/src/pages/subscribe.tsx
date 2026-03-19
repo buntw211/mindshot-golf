@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, Crown, Loader2, Trash2 } from "lucide-react";
+import { CheckCircle, Crown, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -76,39 +77,81 @@ export default function Subscribe() {
         </p>
       </div>
 
-      <Card className="max-w-md mx-auto border-primary/20">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <Crown className="w-5 h-5 text-primary" />
-            <CardTitle>What's included</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              Unlimited journal entries
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              Full pattern analysis
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              Self-assessment comparisons
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              AI-powered mental game insights
-            </li>
-          </ul>
-          {subInfo && (
-            <p className="text-xs text-muted-foreground text-center pt-2 border-t">
-              {subInfo.sessionCount} journal {subInfo.sessionCount === 1 ? "entry" : "entries"} created
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <Card className="relative hover-elevate">
+            <CardHeader>
+              <CardTitle className="text-lg">Monthly</CardTitle>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold">$9.99</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Unlimited journal entries
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Full pattern analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Self-assessment comparisons
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Cancel anytime
+                </li>
+              </ul>
+              <Button className="w-full" disabled data-testid="button-checkout-monthly">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Coming Soon
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="relative border-primary/50 hover-elevate">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
+                Best Value — Save $20
+              </Badge>
+            </div>
+            <CardHeader>
+              <CardTitle className="text-lg">Yearly</CardTitle>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold">$99.99</span>
+                <span className="text-muted-foreground">/year</span>
+              </div>
+              <p className="text-sm text-muted-foreground">That's just $8.33/month</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Unlimited journal entries
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Full pattern analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Self-assessment comparisons
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  2 months free
+                </li>
+              </ul>
+              <Button className="w-full" disabled data-testid="button-checkout-yearly">
+                <Crown className="w-4 h-4 mr-2" />
+                Coming Soon
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
       <div className="border-t pt-8 max-w-md mx-auto space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-center">
