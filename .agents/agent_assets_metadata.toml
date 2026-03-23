@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "DPY15caf0bvqztuOlN3R8"
+uri = "file://MOBILE_SETUP.md"
+type = "text"
+title = "iOS Setup Guide — Step by Step"
