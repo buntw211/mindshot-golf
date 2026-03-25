@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { 
   BookOpen, 
   TrendingUp, 
@@ -11,20 +13,40 @@ import {
 import mindshotLogo from "@assets/mindshot_logo.png";
 
 export default function Landing() {
+  const API_BASE = "https://mindshotgolf.com";
+
+async function handleLogin() {
+  const loginUrl = `${API_BASE}/api/login`;
+
+  if (Capacitor.isNativePlatform()) {
+    await Browser.open({ url: loginUrl });
+
+    // 👇 THIS PART IS NEW
+    Browser.addListener("browserFinished", async () => {
+      window.location.reload();
+    });
+
+  } else {
+    window.location.href = loginUrl;
+  }
+}
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
-              <img src={mindshotLogo} alt="MindShot" className="w-8 h-8 object-contain" data-testid="img-landing-logo" />
-            </div>
-            <span className="text-xl font-bold">MindShot</span>
-          </div>
-        </div>
-      </nav>
+     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur border-b pt-[calc(env(safe-area-inset-top)+8px)]">
+    <div className="flex items-center gap-2">
+      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+        <img
+          src={mindshotLogo}
+          alt="MindShot"
+          className="w-8 h-8 object-contain"
+        />
+      </div>
+      <span className="text-xl font-bold">MindShot</span>
+    </div>
+  </div>
+</nav>
 
-      <main className="pt-24">
+      <main className="pt-28">
         <section className="max-w-6xl mx-auto px-4 py-20 text-center">
           <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden mx-auto mb-8">
             <img src={mindshotLogo} alt="MindShot" className="w-20 h-20 object-contain" data-testid="img-hero-logo" />
@@ -37,19 +59,29 @@ export default function Landing() {
             build mental resilience, and play your best golf.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-            <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6" data-testid="button-get-started" asChild>
-              <a href="/api/login">
-                <Sparkles className="w-5 h-5 mr-2" />
-                Get Started Free
-              </a>
-            </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 py-6" data-testid="button-sign-in-hero" asChild>
-              <a href="/api/login">
-                <LogIn className="w-5 h-5 mr-2" />
-                Sign In
-              </a>
-            </Button>
-          </div>
+
+  <Button
+    size="lg"
+    className="w-full sm:w-auto text-base px-8 py-6"
+    data-testid="button-get-started"
+    onClick={handleLogin}
+  >
+    <Sparkles className="w-5 h-5 mr-2" />
+    Get Started Free
+  </Button>
+
+  <Button
+    size="lg"
+    variant="outline"
+    className="w-full sm:w-auto text-base px-8 py-6"
+    data-testid="button-sign-in-hero"
+    onClick={handleLogin}
+  >
+    <LogIn className="w-5 h-5 mr-2" />
+    Sign In
+  </Button>
+
+</div>
           <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
