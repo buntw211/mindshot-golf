@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -260,15 +260,30 @@ export default function PlayJournal() {
       setScorecardUploading(false);
     }
   };
-
+const { data: subInfo } = useQuery({
+  queryKey: ["/api/subscription"],
+});
   const removeScorecardPhoto = () => {
-    form.setValue("scorecardImage", "");
+form.setValue("scorecardImage", "");
     setScorecardPreview(null);
   };
 
-  const onSubmit = (data: PlayFormData) => {
-    mutation.mutate(data);
-  };
+ const onSubmit = (data: PlayFormData) => {
+  if (!subInfo?.isSubscribed && subInfo?.freeEntriesRemaining === 0) {
+    toast({
+      title: "Free limit reached",
+      description: "Upgrade to continue journaling",
+    });
+
+    setTimeout(() => {
+      window.location.href = "/subscribe";
+    }, 800);
+
+    return;
+  }
+
+  mutation.mutate(data);
+};
 
   // Steps: mode select + details + content steps + self-assessment + review & submit
   const totalSteps = journalMode === "freewriting" ? 5 : guidedQuestions.length + 3;

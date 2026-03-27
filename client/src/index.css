@@ -234,3 +234,15 @@
     inset: -1px;
   }
 }
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+}
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}

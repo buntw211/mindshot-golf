@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -191,7 +191,9 @@ export default function PracticeJournal() {
   });
 
   const selfRatings = form.watch("selfRatings") || {};
-
+const { data: subInfo } = useQuery({
+  queryKey: ["/api/subscription"],
+});
   const updateSelfRating = (category: ThoughtCategory, value: number) => {
     form.setValue("selfRatings", {
       ...selfRatings,
@@ -253,8 +255,21 @@ export default function PracticeJournal() {
   };
 
   const onSubmit = (data: PracticeFormData) => {
-    mutation.mutate(data);
-  };
+  if (!subInfo?.isSubscribed && subInfo?.freeEntriesRemaining === 0) {
+    toast({
+      title: "Free limit reached",
+      description: "Upgrade to continue journaling",
+    });
+
+    setTimeout(() => {
+      window.location.href = "/subscribe";
+    }, 800);
+
+    return;
+  }
+
+  mutation.mutate(data);
+};
 
   const totalSteps = guidedQuestions.length + 2;
 

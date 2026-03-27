@@ -71,18 +71,29 @@ const viewItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
-  const userInitials = user 
-    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'
-    : 'U';
+  const { user, logout } = useAuth();
+
+  const userInitials = user
+    ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() ||
+      user.email?.[0]?.toUpperCase() ||
+      "U"
+    : "U";
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <Link href="/">
-          <div className="flex items-center gap-3 hover-elevate rounded-md p-2 -m-2 cursor-pointer" data-testid="link-home">
+    <Sidebar className="pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+      <SidebarHeader className="p-4 pt-[max(env(safe-area-inset-top),1rem)]">
+        <Link href="/dashboard">
+          <div
+            className="flex items-center gap-3 hover-elevate rounded-md p-2 -m-2 cursor-pointer"
+            data-testid="link-home"
+          >
             <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center overflow-hidden">
-              <img src={mindshotLogo} alt="MindShot" className="w-8 h-8 object-contain" data-testid="img-sidebar-logo" />
+              <img
+                src={mindshotLogo}
+                alt="MindShot"
+                className="w-8 h-8 object-contain"
+                data-testid="img-sidebar-logo"
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sidebar-foreground">MindShot</span>
@@ -91,14 +102,15 @@ export function AppSidebar() {
           </div>
         </Link>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location === "/"}>
-                  <Link href="/" data-testid="link-dashboard">
+                <SidebarMenuButton asChild isActive={location === "/dashboard"}>
+                  <Link href="/dashboard" data-testid="link-dashboard">
                     <LayoutDashboard className="w-4 h-4" />
                     <span>Overview</span>
                   </Link>
@@ -143,6 +155,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -158,31 +171,33 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 space-y-3">
+
+      <SidebarFooter className="p-4 pb-[max(env(safe-area-inset-bottom),1rem)] space-y-3">
         {user && (
           <div className="flex items-center gap-3 p-2 rounded-md bg-accent/30">
             <Avatar className="w-8 h-8">
               <AvatarImage src={user.profileImageUrl || undefined} />
-              <AvatarFallback className="text-xs">
-                {userInitials}
-              </AvatarFallback>
+              <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {user.firstName || user.email?.split('@')[0] || 'User'}
+                {user.firstName || user.email?.split("@")[0] || "User"}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.email}
-              </p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           </div>
         )}
-        <a href="/api/logout" className="block">
-          <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-logout">
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </a>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+          data-testid="button-logout"
+          onClick={() => logout()}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );

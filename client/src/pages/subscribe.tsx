@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { purchase, restorePurchases } from "@/lib/purchases";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, Crown, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle, Loader2, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import mindshotLogo from "@assets/mindshot_logo.png";
@@ -37,6 +38,32 @@ export default function Subscribe() {
   const { data: subInfo, isLoading } = useQuery<SubscriptionInfo>({
     queryKey: ["/api/subscription"],
   });
+
+  const handleSubscribe = async (plan: "monthly" | "yearly") => {
+  const result = await purchase(plan);
+
+  if (result.success) {
+    toast({
+      title: "Success 🎉",
+      description: `${plan === "monthly" ? "Monthly" : "Yearly"} subscription activated in test mode.`,
+    });
+
+    queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+  }
+};
+
+const handleRestorePurchases = async () => {
+  const result = await restorePurchases();
+
+  if (result.success) {
+    toast({
+      title: "Restored",
+      description: "Your subscription has been restored in test mode.",
+    });
+
+    queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+  }
+};
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
@@ -73,85 +100,113 @@ export default function Subscribe() {
           MindShot Pro
         </h1>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          All features are currently free to use. In-app subscriptions are coming soon.
+          Upgrade for unlimited journal entries, full pattern analysis, and deeper self-assessment tools.
         </p>
+        {subInfo && !subInfo.isSubscribed && subInfo.freeEntriesRemaining != null && (
+          <p className="text-sm text-muted-foreground">
+            You have <span className="font-medium text-foreground">{subInfo.freeEntriesRemaining}</span> free entries remaining.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          <Card className="relative hover-elevate">
-            <CardHeader>
-              <CardTitle className="text-lg">Monthly</CardTitle>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">$9.99</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Unlimited journal entries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Full pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Self-assessment comparisons
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Cancel anytime
-                </li>
-              </ul>
-              <Button className="w-full" disabled data-testid="button-checkout-monthly">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="relative border-primary/50 hover-elevate">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
-                Best Value — Save $20
-              </Badge>
+        <Card className="relative hover-elevate">
+          <CardHeader>
+            <CardTitle className="text-lg">Monthly</CardTitle>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold">$9.99</span>
+              <span className="text-muted-foreground">/month</span>
             </div>
-            <CardHeader>
-              <CardTitle className="text-lg">Yearly</CardTitle>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">$99.99</span>
-                <span className="text-muted-foreground">/year</span>
-              </div>
-              <p className="text-sm text-muted-foreground">That's just $8.33/month</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Unlimited journal entries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Full pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  Self-assessment comparisons
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  2 months free
-                </li>
-              </ul>
-              <Button className="w-full" disabled data-testid="button-checkout-yearly">
-                <Crown className="w-4 h-4 mr-2" />
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Unlimited journal entries
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Full pattern analysis
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Self-assessment comparisons
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Cancel anytime
+              </li>
+            </ul>
+
+            <Button
+              className="w-full text-base px-8 py-6"
+              onClick={() => handleSubscribe("monthly")}
+            >
+              Start Monthly
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="relative border-primary/50 hover-elevate">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
+              Best Value — Save $20
+            </Badge>
+          </div>
+
+          <CardHeader>
+            <CardTitle className="text-lg">Yearly</CardTitle>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold">$99.99</span>
+              <span className="text-muted-foreground">/year</span>
+            </div>
+            <p className="text-sm text-muted-foreground">That&apos;s just $8.33/month</p>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Unlimited journal entries
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Full pattern analysis
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                Self-assessment comparisons
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                2 months free
+              </li>
+            </ul>
+
+            <Button
+              className="w-full text-base px-8 py-6"
+              onClick={() => handleSubscribe("yearly")}
+            >
+              Start Yearly
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="text-center space-y-3 max-w-2xl mx-auto">
+        <button
+          onClick={handleRestorePurchases}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+        >
+          Restore Purchases
+        </button>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Subscriptions auto-renew unless canceled at least 24 hours before the end of the current period.
+          Payment will be charged to your Apple ID account at confirmation of purchase.
+        </p>
+      </div>
 
       <div className="border-t pt-8 max-w-md mx-auto space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide text-center">
@@ -188,6 +243,7 @@ export default function Subscribe() {
               <span className="block font-medium text-foreground mt-2">This cannot be undone.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
               Keep My Account
