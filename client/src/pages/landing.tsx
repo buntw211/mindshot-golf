@@ -17,22 +17,14 @@ export default function Landing() {
   const [, setLocation] = useLocation();
 
   function handleGetStarted() {
-    if (Capacitor.isNativePlatform()) {
-      setLocation("/subscribe");
-      return;
-    }
+  // Go straight to dashboard
+  setLocation("/dashboard");
+}
 
-    window.location.href = `${API_BASE}/api/login`;
-  }
-
-  function handleSignIn() {
-    if (Capacitor.isNativePlatform()) {
-      setLocation("/dashboard");
-      return;
-    }
-
-    window.location.href = `${API_BASE}/api/login`;
-  }
+function handleSignIn() {
+  // Go to paywall / subscribe
+  setLocation("/subscribe");
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">

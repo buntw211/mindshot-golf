@@ -3,7 +3,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { purchase, restorePurchases } from "@/lib/purchases";
+import {
+  purchase,
+  restorePurchases,
+  preloadOfferings,
+  purchasesReady,
+} from "@/lib/purchases";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,10 +34,38 @@ interface SubscriptionInfo {
 
 export default function Subscribe() {
   const { toast } = useToast();
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | null>(null);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [iapReady, setIapReady] = useState(false);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function warmUpPurchases() {
+      try {
+        const ready = await preloadOfferings();
+        if (mounted) {
+          setIapReady(ready || purchasesReady());
+        }
+      } catch (error) {
+        console.error("Failed to preload offerings:", error);
+        if (mounted) {
+          setIapReady(false);
+        }
+      }
+    }
+
+    warmUpPurchases();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const { data: subInfo, isLoading } = useQuery<SubscriptionInfo>({
@@ -40,30 +73,64 @@ export default function Subscribe() {
   });
 
   const handleSubscribe = async (plan: "monthly" | "yearly") => {
-  const result = await purchase(plan);
+  try {
+    setPurchaseLoading(plan);
 
-  if (result.success) {
+    if (!iapReady) {
+      await preloadOfferings();
+      setIapReady(true);
+    }
+
+    const result = await purchase(plan);
+
+    if (result.success) {
+      toast({
+        title: "Subscription Active",
+        description:
+          plan === "monthly"
+            ? "Monthly subscription activated."
+            : "Yearly subscription activated.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+      return;
+    }
+
     toast({
-      title: "Success 🎉",
-      description: `${plan === "monthly" ? "Monthly" : "Yearly"} subscription activated in test mode.`,
+      title: "Purchase Failed",
+      description: result.error ?? "Unable to complete purchase.",
+      variant: "destructive",
     });
-
-    queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+  } finally {
+    setPurchaseLoading(null);
   }
 };
 
-const handleRestorePurchases = async () => {
-  const result = await restorePurchases();
+  const handleRestorePurchases = async () => {
+    try {
+      setRestoreLoading(true);
 
-  if (result.success) {
-    toast({
-      title: "Restored",
-      description: "Your subscription has been restored in test mode.",
-    });
+      const result = await restorePurchases();
 
-    queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
-  }
-};
+      if (result.success) {
+        toast({
+          title: "Purchases Restored",
+          description: "Your subscription has been restored.",
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+        return;
+      }
+
+      toast({
+        title: "Restore Failed",
+        description: result.error ?? "Unable to restore purchases.",
+        variant: "destructive",
+      });
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
@@ -94,17 +161,29 @@ const handleRestorePurchases = async () => {
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden mx-auto">
-          <img src={mindshotLogo} alt="MindShot" className="w-12 h-12 object-contain" />
+          <img
+            src={mindshotLogo}
+            alt="MindShot"
+            className="w-12 h-12 object-contain"
+          />
         </div>
+
         <h1 className="text-3xl font-bold" data-testid="text-subscribe-title">
           MindShot Pro
         </h1>
+
         <p className="text-muted-foreground max-w-lg mx-auto">
-          Upgrade for unlimited journal entries, full pattern analysis, and deeper self-assessment tools.
+          Upgrade for unlimited journal entries, full pattern analysis, and
+          deeper self-assessment tools.
         </p>
+
         {subInfo && !subInfo.isSubscribed && subInfo.freeEntriesRemaining != null && (
           <p className="text-sm text-muted-foreground">
-            You have <span className="font-medium text-foreground">{subInfo.freeEntriesRemaining}</span> free entries remaining.
+            You have{" "}
+            <span className="font-medium text-foreground">
+              {subInfo.freeEntriesRemaining}
+            </span>{" "}
+            free entries remaining.
           </p>
         )}
       </div>
@@ -140,17 +219,28 @@ const handleRestorePurchases = async () => {
             </ul>
 
             <Button
-              className="w-full text-base px-8 py-6"
-              onClick={() => handleSubscribe("monthly")}
-            >
-              Start Monthly
-            </Button>
+  className="w-full text-base px-8 py-6"
+  onClick={() => handleSubscribe("monthly")}
+  disabled={purchaseLoading !== null || restoreLoading}
+>
+  {purchaseLoading === "monthly" ? (
+    <>
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Starting Monthly...
+    </>
+  ) : (
+    "Start Monthly"
+  )}
+</Button>
           </CardContent>
         </Card>
 
         <Card className="relative border-primary/50 hover-elevate">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-            <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
+            <Badge
+              className="bg-primary text-primary-foreground"
+              data-testid="badge-best-value"
+            >
               Best Value — Save $20
             </Badge>
           </div>
@@ -161,7 +251,9 @@ const handleRestorePurchases = async () => {
               <span className="text-3xl font-bold">$99.99</span>
               <span className="text-muted-foreground">/year</span>
             </div>
-            <p className="text-sm text-muted-foreground">That&apos;s just $8.33/month</p>
+            <p className="text-sm text-muted-foreground">
+              That&apos;s just $8.33/month
+            </p>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -184,27 +276,37 @@ const handleRestorePurchases = async () => {
               </li>
             </ul>
 
-            <Button
-              className="w-full text-base px-8 py-6"
-              onClick={() => handleSubscribe("yearly")}
-            >
-              Start Yearly
-            </Button>
+           <Button
+  className="w-full text-base px-8 py-6"
+  onClick={() => handleSubscribe("yearly")}
+  disabled={purchaseLoading !== null || restoreLoading}
+>
+  {purchaseLoading === "yearly" ? (
+    <>
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Starting Yearly...
+    </>
+  ) : (
+    "Start Yearly"
+  )}
+</Button>
           </CardContent>
         </Card>
       </div>
 
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <button
-          onClick={handleRestorePurchases}
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
-        >
-          Restore Purchases
-        </button>
+  onClick={handleRestorePurchases}
+  disabled={restoreLoading || purchaseLoading !== null}
+  className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors disabled:opacity-50"
+>
+  {restoreLoading ? "Restoring..." : "Restore Purchases"}
+</button>
 
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Subscriptions auto-renew unless canceled at least 24 hours before the end of the current period.
-          Payment will be charged to your Apple ID account at confirmation of purchase.
+          Subscriptions auto-renew unless canceled at least 24 hours before the
+          end of the current period. Payment will be charged to your Apple ID
+          account at confirmation of purchase.
         </p>
       </div>
 
@@ -240,7 +342,9 @@ const handleRestorePurchases = async () => {
                 <li>Your pattern history and ratings</li>
                 <li>Your account and profile</li>
               </ul>
-              <span className="block font-medium text-foreground mt-2">This cannot be undone.</span>
+              <span className="block font-medium text-foreground mt-2">
+                This cannot be undone.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
 

@@ -9,7 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import mindshotLogo from "@assets/mindshot_logo.png";
 import { SplashScreen } from "@capacitor/splash-screen";
-
+import { initPurchases } from "@/lib/purchases";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import PlayJournal from "@/pages/play-journal";
@@ -141,18 +141,41 @@ function AppContent() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    async function boot() {
-      await SplashScreen.show({
-        autoHide: false,
-      });
+    let isMounted = true;
 
-      setTimeout(async () => {
-        setBooting(false);
-        await SplashScreen.hide();
-      }, 800);
+    async function boot() {
+      try {
+        await SplashScreen.show({
+          autoHide: false,
+        });
+
+        try {
+          await initPurchases();
+        } catch (error) {
+          console.error("initPurchases failed:", error);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      } catch (error) {
+        console.error("Boot failed:", error);
+      } finally {
+        if (isMounted) {
+          setBooting(false);
+        }
+
+        try {
+          await SplashScreen.hide();
+        } catch (error) {
+          console.error("SplashScreen hide failed:", error);
+        }
+      }
     }
 
     boot();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (window.location.pathname === "/account-deleted") {
