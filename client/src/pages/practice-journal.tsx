@@ -202,27 +202,32 @@ const { data: subInfo } = useQuery({
   };
 
   const mutation = useMutation({
-    mutationFn: async (data: PracticeFormData) => {
-      const res = await apiRequest("POST", "/api/sessions", data);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      toast({
-        title: "Practice Session Saved",
-        description: "Your mental game journal entry has been saved.",
-      });
-      navigate(`/session/${data.id}`);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save your entry. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  mutationFn: async (data: PracticeFormData) => {
+    console.log("🚀 SENDING PRACTICE:", data);
+
+    const res = await apiRequest("POST", "/api/sessions", data);
+
+    const text = await res.text();
+    console.log("📦 RESPONSE TEXT:", text);
+    console.log("📡 STATUS:", res.status);
+
+    if (!res.ok) {
+      throw new Error(text);
+    }
+
+    return JSON.parse(text);
+  },
+
+  onError: (error: any) => {
+    console.error("💥 ERROR:", error);
+
+    toast({
+      title: "DEBUG ERROR",
+      description: error?.message || "Unknown error",
+      variant: "destructive",
+    });
+  },
+});
 
   const handleScorecardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -280,7 +285,7 @@ const { data: subInfo } = useQuery({
           <DrivingRangeIcon className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold" data-testid="text-practice-title">Practice Session Journal</h1>
+          <h1 className="text-2xl font-bold" data-testid="text-practice-title">Practice Session Journal DEBUG</h1>
           <p className="text-muted-foreground">Reflect on your practice</p>
         </div>
       </div>
@@ -590,7 +595,7 @@ const { data: subInfo } = useQuery({
           {step === totalSteps - 1 && (
             <Card>
               <CardHeader>
-                <CardTitle>Review & Submit</CardTitle>
+                <CardTitle>REAL SSD VERSION 🔥</CardTitle>
                 <CardDescription>Review your entry before saving</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

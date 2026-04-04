@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -26,13 +27,16 @@ process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
 });
 
-(async () => {
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
-
-  await setupAuth(app);
-  registerAuthRoutes(app);
-
+  app.use(cors({
+    origin: [
+      "https://mindshotgolf.com",
+      "capacitor://localhost",
+      "http://localhost",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }));
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;

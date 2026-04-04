@@ -14,6 +14,15 @@ const ENTITLEMENT_ID = "premium";
 let initialized = false;
 let currentOffering: PurchasesOffering | null = null;
 
+function unwrapCustomerInfo(result: any) {
+  return result?.customerInfo ?? result;
+}
+
+function hasActiveEntitlement(result: any, entitlementId: string) {
+  const info = unwrapCustomerInfo(result);
+  return Boolean(info?.entitlements?.active?.[entitlementId]);
+}
+
 export async function initPurchases() {
   if (!Capacitor.isNativePlatform()) return;
   if (initialized) return;
@@ -86,8 +95,10 @@ export async function getPremiumStatus(): Promise<boolean> {
     await initPurchases();
   }
 
-  const info = await Purchases.getCustomerInfo();
-  return Boolean(info.entitlements.active[ENTITLEMENT_ID]);
+  const result = await Purchases.getCustomerInfo();
+  console.log("CUSTOMER INFO RESULT:", result);
+
+  return hasActiveEntitlement(result, ENTITLEMENT_ID);
 }
 
 export async function purchase(plan: Plan) {
@@ -117,12 +128,19 @@ export async function purchase(plan: Plan) {
       };
     }
 
-    await Purchases.purchasePackage({ aPackage: pkg });
+    const purchaseResult = await Purchases.purchasePackage({ aPackage: pkg });
+    console.log("PURCHASE RESULT:", purchaseResult);
 
-    const info = await Purchases.getCustomerInfo();
-    const isActive = Boolean(info.entitlements.active[ENTITLEMENT_ID]);
+    const purchasedActive = hasActiveEntitlement(purchaseResult, ENTITLEMENT_ID);
+    if (purchasedActive) {
+      return { success: true };
+    }
 
-    return { success: isActive };
+    const refreshed = await Purchases.getCustomerInfo();
+    console.log("CUSTOMER INFO AFTER PURCHASE:", refreshed);
+
+    const refreshedActive = hasActiveEntitlement(refreshed, ENTITLEMENT_ID);
+    return { success: refreshedActive };
   } catch (error: any) {
     const wasCancelled =
       error?.userCancelled === true ||
@@ -150,8 +168,10 @@ export async function restorePurchases() {
       await initPurchases();
     }
 
-    const info = await Purchases.restorePurchases();
-    const isActive = Boolean(info.entitlements.active[ENTITLEMENT_ID]);
+    const result = await Purchases.restorePurchases();
+    console.log("RESTORE RESULT:", result);
+
+    const isActive = hasActiveEntitlement(result, ENTITLEMENT_ID);
 
     return { success: isActive };
   } catch (error: any) {

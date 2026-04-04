@@ -214,27 +214,40 @@ export default function PlayJournal() {
   };
 
   const mutation = useMutation({
-    mutationFn: async (data: PlayFormData) => {
-      const res = await apiRequest("POST", "/api/sessions", data);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      toast({
-        title: "Round Saved",
-        description: "Your mental game journal entry has been saved.",
-      });
-      navigate(`/session/${data.id}`);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save your entry. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  mutationFn: async (data: PracticeFormData) => {
+    console.log("🚀 SENDING PRACTICE SESSION:", data);
+
+    const res = await apiRequest("POST", "/api/sessions", data);
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("❌ PRACTICE BACKEND ERROR:", text);
+      throw new Error(text || "Request failed");
+    }
+
+    const json = await res.json();
+    console.log("✅ PRACTICE SUCCESS:", json);
+
+    return json;
+  },
+  onSuccess: (data) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    toast({
+      title: "Practice Saved",
+      description: "Your practice journal entry has been saved.",
+    });
+    navigate(`/session/${data.id}`);
+  },
+  onError: (error: any) => {
+    console.error("💥 PRACTICE SAVE ERROR:", error);
+    toast({
+      title: "Error",
+      description: error?.message || "Failed to save your entry. Please try again.",
+      variant: "destructive",
+    });
+  },
+});
 
   const handleScorecardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
