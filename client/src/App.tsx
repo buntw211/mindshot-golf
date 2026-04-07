@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +10,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import mindshotLogo from "@assets/mindshot_logo.png";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { initPurchases } from "@/lib/purchases";
+
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import PlayJournal from "@/pages/play-journal";
 import PracticeJournal from "@/pages/practice-journal";
@@ -21,6 +23,12 @@ import Tips from "@/pages/tips";
 import StonkGolf from "@/pages/stonk-golf";
 import Subscribe from "@/pages/subscribe";
 import AccountDeleted from "@/pages/account-deleted";
+
+type AuthUser = {
+  id: string | number;
+  email: string;
+  verified?: boolean;
+};
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const style = {
@@ -81,57 +89,116 @@ function LoadingScreen() {
   );
 }
 
-function AppRouter() {
+function ProtectedRoute({
+  children,
+  user,
+  authChecked,
+}: {
+  children: React.ReactNode;
+  user: AuthUser | null;
+  authChecked: boolean;
+}) {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (authChecked && !user) {
+      setLocation("/login");
+    }
+  }, [authChecked, user, setLocation]);
+
+  if (!authChecked) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRouter({
+  user,
+  authChecked,
+}: {
+  user: AuthUser | null;
+  authChecked: boolean;
+}) {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/login" component={Login} />
+
       <Route path="/subscribe">
-  <AppShell>
-    <Subscribe />
-  </AppShell>
-</Route>
+        <Subscribe />
+      </Route>
+
       <Route path="/dashboard">
-        <AppShell>
-          <Dashboard />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <Dashboard />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/play">
-        <AppShell>
-          <PlayJournal />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <PlayJournal />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/practice">
-        <AppShell>
-          <PracticeJournal />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <PracticeJournal />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/history">
-        <AppShell>
-          <History />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <History />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/session/:id">
         {(params) => (
-          <AppShell>
-            <SessionDetail id={params.id} />
-          </AppShell>
+          <ProtectedRoute user={user} authChecked={authChecked}>
+            <AppShell>
+              <SessionDetail id={params.id} />
+            </AppShell>
+          </ProtectedRoute>
         )}
       </Route>
+
       <Route path="/patterns">
-        <AppShell>
-          <Patterns />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <Patterns />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/tips">
-        <AppShell>
-          <Tips />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <Tips />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route path="/pro-training">
-        <AppShell>
-          <StonkGolf />
-        </AppShell>
+        <ProtectedRoute user={user} authChecked={authChecked}>
+          <AppShell>
+            <StonkGolf />
+          </AppShell>
+        </ProtectedRoute>
       </Route>
+
       <Route component={Landing} />
     </Switch>
   );
@@ -139,6 +206,8 @@ function AppRouter() {
 
 function AppContent() {
   const [booting, setBooting] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,6 +222,33 @@ function AppContent() {
           await initPurchases();
         } catch (error) {
           console.error("initPurchases failed:", error);
+        }
+
+        try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://172.16.227.133:5001";
+
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 3000);
+
+try {
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    credentials: "include",
+    signal: controller.signal,
+  });
+
+  if (res.ok) {
+    const userData = await res.json();
+    if (isMounted) setUser(userData);
+  } else {
+    if (isMounted) setUser(null);
+  }
+} catch (error) {
+  console.error("Auth check failed:", error);
+  if (isMounted) setUser(null);
+} finally {
+  clearTimeout(timeout);
+  if (isMounted) setAuthChecked(true);
+}
         }
 
         await new Promise((resolve) => setTimeout(resolve, 800));
@@ -186,7 +282,7 @@ function AppContent() {
     return <LoadingScreen />;
   }
 
-  return <AppRouter />;
+  return <AppRouter user={user} authChecked={authChecked} />;
 }
 
 function App() {

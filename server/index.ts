@@ -1,12 +1,28 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import authRouter from "./auth";
+import cookieParser from "cookie-parser";
 
 const app = express();
 const httpServer = createServer(app);
+
+app.use(cookieParser());
+
+app.use(cors({
+  origin: [
+    "https://mindshotgolf.com",
+    "capacitor://localhost",
+    "http://localhost",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+app.use("/api/auth", authRouter);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -19,33 +35,27 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
 });
 
-  app.use(cors({
-    origin: [
-      "https://mindshotgolf.com",
-      "capacitor://localhost",
-      "http://localhost",
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }));
+(async () => {
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
+
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-    const originalResJson = res.json;
+    const originalResJson = res.json.bind(res);
     res.json = function (bodyJson, ...args) {
       capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
+      return originalResJson(bodyJson, ...args);
     };
 
     res.on("finish", () => {
@@ -55,7 +65,6 @@ process.on('uncaughtException', (error) => {
         if (capturedJsonResponse) {
           logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
         }
-
         log(logLine);
       }
     });
@@ -97,9 +106,9 @@ process.on('uncaughtException', (error) => {
     },
   );
 
-  httpServer.on('error', (err: any) => {
-    console.error('Server listen error:', err);
-    if (err.code === 'EADDRINUSE') {
+  httpServer.on("error", (err: any) => {
+    console.error("Server listen error:", err);
+    if (err.code === "EADDRINUSE") {
       console.error(`Port ${port} is already in use`);
     }
     process.exit(1);

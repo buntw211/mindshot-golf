@@ -26,6 +26,8 @@ export interface IStorage {
   getPatterns(userId?: string, startDate?: string, endDate?: string): Promise<PatternSummary[]>;
   getDashboardStats(userId?: string): Promise<DashboardStats>;
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(data: { email: string; passwordHash: string }): Promise<User>;
   getSessionCount(userId: string): Promise<number>;
   updateUserSubscription(userId: string, data: { stripeCustomerId?: string; subscriptionStatus?: string; subscriptionTier?: string | null }): Promise<void>;
   deleteAccount(userId: string): Promise<void>;
@@ -71,7 +73,27 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
+    return user || undefined;
+  }
 
+  async createUser(data: { email: string; passwordHash: string }): Promise<User> {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const id = randomUUID();
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        id,
+        email: normalizedEmail,
+        passwordHash: data.passwordHash,
+      })
+      .returning();
+
+    return user;
+  }
   async getSessionCount(userId: string): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` })
       .from(journalEntries)

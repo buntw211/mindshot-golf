@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Capacitor } from "@capacitor/core";
 import { useLocation } from "wouter";
 import {
   BookOpen,
@@ -13,18 +12,19 @@ import {
 import mindshotLogo from "@assets/mindshot_logo.png";
 
 export default function Landing() {
-  const API_BASE = "https://mindshotgolf.com";
   const [, setLocation] = useLocation();
 
   function handleGetStarted() {
-  // Go straight to dashboard
-  setLocation("/dashboard");
-}
+    setLocation("/dashboard");
+  }
 
-function handleSignIn() {
-  // Go to paywall / subscribe
-  setLocation("/subscribe");
-}
+  function handleSignIn() {
+    setLocation("/login");
+  }
+
+  function handleSubscribe() {
+    setLocation("/subscribe");
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
@@ -171,6 +171,14 @@ function handleSignIn() {
                     Cancel anytime
                   </li>
                 </ul>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handleSubscribe}
+                >
+                  Start Monthly
+                </Button>
               </CardContent>
             </Card>
 
@@ -203,6 +211,14 @@ function handleSignIn() {
                     2 months free
                   </li>
                 </ul>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handleSubscribe}
+                >
+                  Start Yearly
+                </Button>
               </CardContent>
             </Card>
           </div>

@@ -2,7 +2,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 // When building for mobile (Capacitor), set VITE_API_BASE_URL to your deployed Replit URL.
 // In web mode this is empty and relative URLs are used as normal.
-const API_BASE = "https://mindshotgolf.com";
+const API_BASE = "172.16.227.133";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
