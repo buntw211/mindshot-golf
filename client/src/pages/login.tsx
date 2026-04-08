@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import mindshotLogo from "@assets/mindshot_logo.png";
 
-const API_BASE = "172.16.227.133";
+const API_BASE = "https://mindshot-golf-production.up.railway.app";
 
 export default function Login() {
   const [, setLocation] = useLocation();

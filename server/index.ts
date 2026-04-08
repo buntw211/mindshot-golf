@@ -47,7 +47,7 @@ process.on("uncaughtException", (error) => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  app.use((req, res, next) => {
+    app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
@@ -72,9 +72,19 @@ process.on("uncaughtException", (error) => {
     next();
   });
 
-  await registerRoutes(httpServer, app);
+  app.get("/", (_req, res) => {
+    res.status(200).send("Mindshot backend running");
+  });
 
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ ok: true });
+  });
+
+  console.log("About to register routes...");
+  await registerRoutes(httpServer, app);
+  console.log("Routes registered.");
+ 
+app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 

@@ -213,6 +213,10 @@ function AppContent() {
     let isMounted = true;
 
     async function boot() {
+      const API_BASE =
+        import.meta.env.VITE_API_BASE_URL ||
+        "https://mindshot-golf-production.up.railway.app";
+
       try {
         await SplashScreen.show({
           autoHide: false,
@@ -224,31 +228,35 @@ function AppContent() {
           console.error("initPurchases failed:", error);
         }
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+
         try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://172.16.227.133:5001";
+          const res = await fetch(`${API_BASE}/api/auth/me`, {
+            credentials: "include",
+            signal: controller.signal,
+          });
 
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 3000);
-
-try {
-  const res = await fetch(`${API_BASE}/api/auth/me`, {
-    credentials: "include",
-    signal: controller.signal,
-  });
-
-  if (res.ok) {
-    const userData = await res.json();
-    if (isMounted) setUser(userData);
-  } else {
-    if (isMounted) setUser(null);
-  }
-} catch (error) {
-  console.error("Auth check failed:", error);
-  if (isMounted) setUser(null);
-} finally {
-  clearTimeout(timeout);
-  if (isMounted) setAuthChecked(true);
-}
+          if (res.ok) {
+            const userData = await res.json();
+            if (isMounted) {
+              setUser(userData);
+            }
+          } else {
+            if (isMounted) {
+              setUser(null);
+            }
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          if (isMounted) {
+            setUser(null);
+          }
+        } finally {
+          clearTimeout(timeout);
+          if (isMounted) {
+            setAuthChecked(true);
+          }
         }
 
         await new Promise((resolve) => setTimeout(resolve, 800));
