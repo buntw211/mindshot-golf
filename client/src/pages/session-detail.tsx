@@ -483,7 +483,7 @@ function EmbrReviewSection({ session }: { session: Session }) {
           appMode: "mindshot",
           userId,
           message:
-            "Generate a calm, practical mental-game review for this golf journal entry. Focus on patterns, pressure response, focus, self-talk, decision-making, and one next move.",
+            "Generate a calm, practical Mindshot Golf mental-game review for this journal entry. Use this exact structure: Mental Read, Signal I Notice, What It Could Mean, Next Move, Embr Note. Keep it concise, specific, and grounded in the entry. Focus on patterns, pressure response, focus, self-talk, decision-making, emotional control, and one next move. Do not mention internal tools, engines, backend systems, or operator routing.",
           messages: [],
           appContext: {
             appName: "Mindshot Golf",
